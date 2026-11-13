@@ -54,6 +54,31 @@
         { t: 'All 12 Anywhere', d: 'Every note, any octave.', p: A12 },
         { t: 'Chromatic Mastery', d: 'Checkpoint: all 12, any octave.', p: A12 }
       ] },
+      { t: 'Deep Bass', d: 'Two octaves down: the low rumble.', nu: 1, o: { oct: [2] }, L: [
+        { t: 'Bass Anchors', d: 'C, E, and G way down low.', p: [0, 4, 7] },
+        { t: 'Bass White Keys', d: 'Every white key, deep bass.', p: W },
+        { t: 'Bass Chromatic', d: 'All 12 notes, deep bass.', p: A12 },
+        { t: 'Deep Bass', d: 'Checkpoint: the deep bass.', p: A12 }
+      ] },
+      { t: 'Sky High', d: 'Two octaves up: the bright top.', nu: 1, o: { oct: [6] }, L: [
+        { t: 'Sky Anchors', d: 'C, E, and G way up high.', p: [0, 4, 7] },
+        { t: 'Sky White Keys', d: 'Every white key, up high.', p: W },
+        { t: 'Sky Chromatic', d: 'All 12 notes, up high.', p: A12 },
+        { t: 'Sky High', d: 'Checkpoint: the high register.', p: A12 }
+      ] },
+      { t: 'Melodies', d: 'Hear a short tune and name every note.', nu: 1, o: { oct: [4] }, L: [
+        { t: 'Two-Note Tunes', d: 'Name two notes in order.', p: [0, 2, 4, 5, 7], o: { seq: 2 }, seqIntro: 1 },
+        { t: 'White-Key Tunes', d: 'Two notes, any white key.', p: W, o: { seq: 2 } },
+        { t: 'Three-Note Tunes', d: 'Name three notes in order.', p: [0, 2, 4, 5, 7], o: { seq: 3 } },
+        { t: 'Chromatic Tunes', d: 'Two notes, all 12.', p: A12, o: { seq: 2 } },
+        { t: 'Melodies', d: 'Checkpoint: three-note tunes.', p: W, o: { seq: 3 } }
+      ] },
+      { t: 'Five Octaves', d: 'Any note, from deep bass to sky high.', nu: 1, o: { oct: [2, 3, 4, 5, 6] }, L: [
+        { t: 'Whites Everywhere', d: 'White keys across five octaves.', p: W },
+        { t: 'Everything Everywhere', d: 'All 12 across five octaves.', p: A12 },
+        { t: 'Timbre Shuffle', d: 'Five octaves, random instruments.', p: A12, o: { inst: 'random' } },
+        { t: 'Five Octaves', d: 'Checkpoint: five octaves.', p: A12 }
+      ] },
       { t: 'Absolute Pitch', d: '12 Notes. 3 Octaves. Random. No Mercy.', o: { oct: [3, 4, 5], inst: 'random' }, L: [
         { t: 'Random Timbres', d: 'Every note on every instrument.', p: A12 },
         { t: 'No Warm-up', d: 'Ear resets before every note.', p: A12, o: { reset: 1 } },
@@ -117,6 +142,24 @@
         { t: 'Speed Round', d: 'A longer run, everything.', p: I12, q: 30 },
         { t: 'Every Direction', d: 'Checkpoint: all intervals, any direction.', p: I12 }
       ] },
+      { t: 'Low & Deep', d: 'Intervals in the bass register.', nu: 1, o: { dir: 'both', low: 1 }, L: [
+        { t: 'Low Perfects', d: 'P4, P5, P8 down low.', p: [5, 7, 12] },
+        { t: 'Low Thirds & Sixths', d: 'm3, M3, m6, M6 down low.', p: [3, 4, 8, 9] },
+        { t: 'Low Everything', d: 'All 12, down low.', p: I12, o: { dir: 'any' } },
+        { t: 'Low & Deep', d: 'Checkpoint: bass intervals.', p: I12, o: { dir: 'any' } }
+      ] },
+      { t: 'Quick Ears', d: 'Shorter notes, faster decisions.', nu: 1, o: { fast: 1, dir: 'both' }, L: [
+        { t: 'Quick Small', d: 'm2 to A4, quick.', p: [1, 2, 3, 4, 5, 6] },
+        { t: 'Quick Large', d: 'A4 to P8, quick.', p: [6, 7, 8, 9, 10, 11, 12] },
+        { t: 'Quick Together', d: 'All 12 at once, quick.', p: I12, o: { dir: 'harm' } },
+        { t: 'Quick Ears', d: 'Checkpoint: quick intervals.', p: I12, o: { dir: 'any' } }
+      ] },
+      { t: 'New Voices', d: 'Every interval on every instrument.', nu: 1, o: { inst: 'random', wide: 1 }, L: [
+        { t: 'New Voices Up', d: 'Ascending, random instruments.', p: I12, o: { dir: 'up' } },
+        { t: 'New Voices Down', d: 'Descending, random instruments.', p: I12, o: { dir: 'down' } },
+        { t: 'New Voices Together', d: 'Harmonic, random instruments.', p: I12, o: { dir: 'harm' } },
+        { t: 'New Voices', d: 'Checkpoint: any interval, any instrument.', p: I12, o: { dir: 'any' } }
+      ] },
       { t: 'Final Exam: Absolute Mastery', d: 'Any interval. Any octave. Either direction.', o: { dir: 'any', wide: 1 }, L: [
         { t: 'Absolute Mastery', d: 'Any interval. Any octave. Either direction. Pass it to skip everything before it.', p: I12 }
       ] }
@@ -155,6 +198,23 @@
         { t: 'Inversions', d: 'Every chord, inverted.', p: ALLC, o: { low: 0, inv: 1 } },
         { t: 'The Rumble', d: 'Checkpoint: all chords, low octave.', p: ALLC }
       ] },
+      { t: 'Inversion Lab', d: 'Every chord, flipped and rearranged.', nu: 1, o: { inv: 1 }, L: [
+        { t: 'Inverted Triads', d: 'All four triads, inverted.', p: TRI },
+        { t: 'Inverted 7ths', d: 'All five 7ths, inverted.', p: SEV },
+        { t: 'All Inverted', d: 'Every chord, inverted.', p: ALLC },
+        { t: 'Inversion Lab', d: 'Checkpoint: inversions.', p: ALLC }
+      ] },
+      { t: 'High Voicings', d: 'Chords up in the bright register.', nu: 1, o: { high: 1 }, L: [
+        { t: 'High Triads', d: 'Triads up high.', p: TRI },
+        { t: 'High 7ths', d: '7th chords up high.', p: SEV },
+        { t: 'High Voicings', d: 'Checkpoint: every chord, up high.', p: ALLC }
+      ] },
+      { t: 'Color Swap', d: 'Every chord on every instrument.', nu: 1, o: { inst: 'random', wide: 1 }, L: [
+        { t: 'Triads, New Voices', d: 'Triads, random instruments.', p: TRI },
+        { t: '7ths, New Voices', d: '7ths, random instruments.', p: SEV },
+        { t: 'Broken & Random', d: 'Arpeggios, random instruments.', p: ALLC, o: { arp: 1 } },
+        { t: 'Color Swap', d: 'Checkpoint: any chord, any instrument.', p: ALLC }
+      ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
@@ -191,6 +251,23 @@
         { t: 'Blues', d: 'Meet the blues scale.', n: ['blues'] },
         { t: 'All Eleven', d: 'Every scale you know.', p: ALLS },
         { t: 'All 11 Scales', d: 'Checkpoint: all 11 scales.', p: ALLS }
+      ] },
+      { t: 'Going Down', d: 'Every scale, played from the top.', nu: 1, o: { allDown: 1, randomRoot: 1 }, L: [
+        { t: 'Foundation Down', d: 'Major and the three minors, descending.', p: ['major', 'natmin', 'harmin', 'melmin'] },
+        { t: 'Modes Down', d: 'The six modes, descending.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
+        { t: 'All Down', d: 'All 11, descending.', p: ALLS },
+        { t: 'Going Down', d: 'Checkpoint: descending scales.', p: ALLS }
+      ] },
+      { t: 'Quick Scales', d: 'Scales at a faster tempo.', nu: 1, o: { fast: 1, randomRoot: 1 }, L: [
+        { t: 'Quick Foundation', d: 'The foundation scales, fast.', p: ['major', 'natmin', 'harmin', 'melmin'] },
+        { t: 'Quick Modes', d: 'The modes, fast.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
+        { t: 'Quick Pentatonics', d: 'Five-note scales and blues, fast.', p: ['pentmaj', 'pentmin', 'blues', 'major', 'natmin'] },
+        { t: 'Quick Scales', d: 'Checkpoint: all 11, fast.', p: ALLS }
+      ] },
+      { t: 'Scale Colors', d: 'Every scale on every instrument.', nu: 1, o: { inst: 'random', randomRoot: 1, desc: 1 }, L: [
+        { t: 'Modes, New Voices', d: 'The modes, random instruments.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
+        { t: 'All 11, New Voices', d: 'Every scale, random instruments.', p: ALLS },
+        { t: 'Scale Colors', d: 'Checkpoint: any scale, any instrument.', p: ALLS }
       ] },
       { t: 'Final: Any Scale, Any Key', d: 'All 11 scales, random keys and octaves.', o: { randomRoot: 1, wide: 1 }, L: [
         { t: 'Random Keys', d: 'Every scale in random keys.', p: ALLS },
@@ -230,12 +307,30 @@
         { t: 'Close Listening', d: 'Focus on the bass line.', p: ALLP },
         { t: 'Real Voicings', d: 'Checkpoint: real voicings.', p: ALLP }
       ] },
+      { t: 'Random Keys', d: 'Every progression, any key.', nu: 1, o: { randomKey: 1 }, L: [
+        { t: 'Major in Any Key', d: 'The five major loops, random keys.', p: MAJP },
+        { t: 'Minor in Any Key', d: 'Minor loops and ii-V-I, random keys.', p: MINP.concat(['ii-V-I']) },
+        { t: 'All Nine, Any Key', d: 'Every progression, random keys.', p: ALLP },
+        { t: 'Random Keys', d: 'Checkpoint: any progression, any key.', p: ALLP }
+      ] },
+      { t: 'Up Tempo', d: 'Chord changes at a faster tempo.', nu: 1, o: { fast: 1 }, L: [
+        { t: 'Quick Major', d: 'The major loops, fast.', p: MAJP },
+        { t: 'Quick Minor', d: 'The minor loops, fast.', p: MINP.concat(['ii-V-I']) },
+        { t: 'Quick All Nine', d: 'Every progression, fast.', p: ALLP },
+        { t: 'Up Tempo', d: 'Checkpoint: fast progressions.', p: ALLP, o: { randomKey: 1 } }
+      ] },
+      { t: 'Low Voicings', d: 'Voice-led chords in the low register.', nu: 1, o: { voice: 1, low: 1 }, L: [
+        { t: 'Low & Smooth', d: 'Every progression, low and voice-led.', p: ALLP },
+        { t: 'Band Swap', d: 'Every progression, random instruments.', p: ALLP, o: { inst: 'random' } },
+        { t: 'Low Voicings', d: 'Checkpoint: low voicings.', p: ALLP }
+      ] },
       { t: 'Final: Any Progression, Any Key', d: 'All nine, random keys, real voicings.', o: { voice: 1, randomKey: 1 }, L: [
         { t: 'Any Progression, Any Key', d: 'All nine, random keys, real voicings. Pass it to skip everything before it.', p: ALLP }
       ] }
     ]
   };
 
+  const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   /* Flatten into lessons with resolved pools/options */
   const SKILL = {};
   Object.keys(DATA).forEach((sk) => {
@@ -251,7 +346,8 @@
           skill: sk, idx: lessons.length, unit: ui, t: l.t, d: l.d,
           n: l.n || [], pool: (l.p || learned).slice(), kind, intro: !!l.intro,
           o: Object.assign({}, u.o || {}, l.o || {}),
-          q: l.q || (kind === 'final' ? 40 : kind === 'check' ? 24 : kind === 'learn' ? 15 : 18)
+          q: l.q || (kind === 'final' ? 40 : kind === 'check' ? 26 : kind === 'learn' ? 16 : 20),
+          id: sk + '/' + slug(u.t) + '/' + li, seqIntro: !!l.seqIntro
         };
         // ensure new items are always in pool
         lesson.n.forEach((x) => { if (!lesson.pool.includes(x)) lesson.pool.push(x); });
@@ -262,5 +358,11 @@
     SKILL[sk] = { lessons, units };
   });
 
-  window.PTCurriculum = { SKILL };
+  /* Lesson ids for the 1.0 layout (indexes were stored before ids existed) */
+  function legacyId(sk, idx) {
+    const old = DATA[sk].filter((u) => !u.nu);
+    for (const u of old) { if (idx < u.L.length) return sk + '/' + slug(u.t) + '/' + idx; idx -= u.L.length; }
+    return null;
+  }
+  window.PTCurriculum = { SKILL, legacyId };
 })();

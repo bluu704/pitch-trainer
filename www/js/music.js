@@ -175,9 +175,16 @@
     return out;
   }
 
+  /* register ranges per option */
+  function intRange(o) { return o.low ? [40, 52] : o.wide ? [45, 72] : [55, 67]; }
+  function chordRange(o) { return o.low ? [40, 50] : o.high ? [64, 74] : o.wide ? [43, 67] : [55, 64]; }
+  function scaleRoot(o) { return o.low ? rnd(43, 52) : o.randomRoot ? rnd(o.wide ? 48 : 55, o.wide ? 66 : 64) : 60; }
+  function progKey(o) { return o.low ? rnd(48, 55) : o.randomKey ? rnd(55, 66) : 60; }
+
   /* opts per lesson; returns {steps} */
   function instance(skill, item, o) {
     o = o || {};
+    const fast = o.fast ? 0.62 : 1;
     switch (skill) {
       case 'pitch': {
         const oct = pick(o.oct || [4]);
@@ -185,48 +192,41 @@
         return { steps: [{ t: 0, notes: [m], d: 1.5 }], meta: { midi: m } };
       }
       case 'intervals': {
-        const wide = o.wide;
-        const lo = wide ? 45 : 55, hi = wide ? 72 : 67;
+        const [lo, hi] = intRange(o);
         let dir = o.dir || 'up';
         if (dir === 'both') dir = pick(['up', 'down']);
         if (dir === 'any') dir = pick(['up', 'down', 'harm']);
-        let a = o.root != null ? o.root : (dir === 'down' ? rnd(lo + 12, hi + 5) : rnd(lo, hi));
+        const a = o.root != null ? o.root : (dir === 'down' ? rnd(lo + 12, hi + 5) : rnd(lo, hi));
         const b = dir === 'down' ? a - item : a + item;
         const steps = dir === 'harm'
-          ? [{ t: 0, notes: [a, b], d: 1.8 }]
-          : [{ t: 0, notes: [a], d: 0.85 }, { t: 0.9, notes: [b], d: 1.2 }];
+          ? [{ t: 0, notes: [a, b], d: 1.8 * fast }]
+          : [{ t: 0, notes: [a], d: 0.85 * fast }, { t: 0.9 * fast, notes: [b], d: 1.2 * fast }];
         return { steps, meta: { dir } };
       }
       case 'chords': {
-        let lo = 55, hi = 64;
-        if (o.low) { lo = 36; hi = 47; }
-        if (o.wide) { lo = 40; hi = 67; }
+        const [lo, hi] = chordRange(o);
         const root = o.root != null ? o.root : rnd(lo, hi);
         let notes = closeVoicing(root, item);
         if (o.inv) notes = invert(notes, o.invN != null ? o.invN % notes.length : rnd(0, notes.length - 1));
         if (o.low) notes = [root - 12].concat(notes);
-        if (o.arp) {
-          const steps = notes.map((n, i) => ({ t: i * 0.32, notes: [n], d: 2.0 - i * 0.32 }));
-          return { steps };
-        }
+        if (o.arp) return { steps: notes.map((n, i) => ({ t: i * 0.32, notes: [n], d: 2.0 - i * 0.32 })) };
         return { steps: [{ t: 0, notes, d: 2.0 }] };
       }
       case 'scales': {
         const sc = SCALES[item];
-        const root = o.root != null ? o.root : (o.randomRoot ? rnd(o.wide ? 48 : 55, o.wide ? 66 : 64) : 60);
+        const root = o.root != null ? o.root : scaleRoot(o);
         let seq = sc.iv.map((x) => root + x);
-        const down = o.down != null ? o.down : (o.desc && Math.random() < 0.5);
+        const down = o.down != null ? o.down : (o.allDown || (o.desc && Math.random() < 0.5));
         if (down) seq = seq.slice().reverse();
-        const step = 0.3;
-        const steps = seq.map((n, i) => ({ t: i * step, notes: [n], d: i === seq.length - 1 ? 0.9 : step + 0.05 }));
-        return { steps };
+        const step = 0.3 * (o.fast ? 0.6 : 1);
+        return { steps: seq.map((n, i) => ({ t: i * step, notes: [n], d: i === seq.length - 1 ? 0.9 : step + 0.05 })) };
       }
       case 'progs': {
-        const key = o.key != null ? o.key : (o.randomKey ? rnd(55, 66) : 60);
+        const key = o.key != null ? o.key : progKey(o);
         const pr = PROGS[item].chords;
         const steps = [];
         let prev = null;
-        const dur = 0.95;
+        const dur = 0.95 * (o.fast ? 0.65 : 1);
         pr.forEach((r, i) => {
           const [off, q] = ROMAN[r];
           let root = key + off;
@@ -249,6 +249,11 @@
   }
   function dist(a, b) { let s = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) s += Math.abs(a[i] - b[i]); return s; }
 
+  /* a melody of pitch classes (for "name the notes" questions) */
+  function seqInstance(items, o) {
+    const oct = pick(o.oct || [4]);
+    return { steps: items.map((pc, i) => ({ t: i * 0.85, notes: [12 * (oct + 1) + pc], d: i === items.length - 1 ? 1.3 : 0.8 })) };
+  }
 
   /* Fix the random parts of a sound so alternates can be played in the same register */
   function concrete(skill, o) {
@@ -259,35 +264,59 @@
         let dir = o.dir || 'up';
         if (dir === 'both') dir = pick(['up', 'down']);
         if (dir === 'any') dir = pick(['up', 'down', 'harm']);
-        const lo = o.wide ? 45 : 55, hi = o.wide ? 72 : 67;
+        const [lo, hi] = intRange(o);
         o.dir = dir; o.root = dir === 'down' ? rnd(lo + 12, hi + 5) : rnd(lo, hi); break;
       }
       case 'chords': {
-        let lo = 55, hi = 64;
-        if (o.low) { lo = 36; hi = 47; }
-        if (o.wide) { lo = 40; hi = 67; }
+        const [lo, hi] = chordRange(o);
         o.root = rnd(lo, hi); if (o.inv) o.invN = rnd(0, 3); break;
       }
       case 'scales':
-        o.root = o.randomRoot ? rnd(o.wide ? 48 : 55, o.wide ? 66 : 64) : 60;
-        o.down = !!(o.desc && Math.random() < 0.5); break;
-      case 'progs': o.key = o.randomKey ? rnd(55, 66) : 60; break;
+        o.root = scaleRoot(o);
+        o.down = !!(o.allDown || (o.desc && Math.random() < 0.5)); break;
+      case 'progs': o.key = progKey(o); break;
     }
     return o;
   }
 
-  /* short random chords to wipe the pitch memory */
-  function resetEarSteps() {
-    const steps = [];
-    for (let i = 0; i < 3; i++) {
-      const root = rnd(48, 64), q = pick(['maj', 'min', 'dim', 'aug']);
-      steps.push({ t: i * 0.2, notes: closeVoicing(root, q).concat([root + rnd(13, 20)]), d: 0.18, v: 0.6 });
-    }
-    return { steps, len: 0.75 };
+  /* Short chords between questions so the last sound doesn't anchor the next answer.
+     style: 'harmonic' (pleasant diatonic chords), 'mixed' (consonant chords, unrelated keys), 'dissonant' (clusters) */
+  const DIATONIC = [[0, 'maj'], [2, 'min'], [4, 'min'], [5, 'maj'], [7, 'maj'], [9, 'min']];
+  function voiceNear(root, q, center) {
+    const base = closeVoicing(root, q);
+    const cands = [0, 1, 2].map((k) => invert(base, k)).concat([0, 1, 2].map((k) => invert(base, k).map((n) => n - 12)));
+    return cands.reduce((b, c) => (Math.abs(c[1] - center) < Math.abs(b[1] - center) ? c : b));
   }
+  function resetEarSteps(style) {
+    const steps = [];
+    if (style === 'dissonant') {
+      for (let i = 0; i < 3; i++) {
+        const root = rnd(48, 64), q = pick(['maj', 'min', 'dim', 'aug']);
+        steps.push({ t: i * 0.2, notes: closeVoicing(root, q).concat([root + rnd(13, 20)]), d: 0.18, v: 0.5 });
+      }
+      return { steps, len: 0.75 };
+    }
+    if (style === 'mixed') {
+      for (let i = 0; i < 3; i++) {
+        const root = rnd(50, 62), q = pick(['maj', 'min']);
+        steps.push({ t: i * 0.3, notes: voiceNear(root, q, 62).concat([root - 12]), d: 0.32, v: 0.45 });
+      }
+      return { steps, len: 1.0 };
+    }
+    // harmonic: a short, pleasant cadence in a random key
+    const key = rnd(53, 64);
+    const order = shuffleArr(DIATONIC.slice(1)).slice(0, 2);
+    const chords = [DIATONIC[0]].concat(order);
+    chords.forEach(([off, q], i) => {
+      let root = key + off; if (root > key + 6) root -= 12;
+      steps.push({ t: i * 0.34, notes: voiceNear(root, q, 64).concat([root - 12]), d: 0.4, v: 0.42 });
+    });
+    return { steps, len: 1.1 };
+  }
+  function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   window.PTMusic = {
     NAMES, NAME_OPTIONS, TRANSPOSE_OPTIONS, WHITE, BLACK, ALL12, INTERVALS, CHORDS, SCALES, ROMAN, PROGS, DESC,
-    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
+    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
   };
 })();

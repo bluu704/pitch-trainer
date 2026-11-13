@@ -13,17 +13,18 @@ Duolingo-style ear training: learn to hear **notes, intervals, chords, scales, a
 | Area | What's inside |
 |---|---|
 | Home | Greeting, streak counter, week strip, today's session card, 5 skill cards with progress |
-| Skills | Pitch (32 lessons), Intervals (42), Chords (26), Scales (25), Progressions (24) |
+| Skills | Pitch (49 lessons), Intervals (54), Chords (37), Scales (36), Progressions (35) — 211 in total |
 | Skill path | Units, zig-zag lesson nodes, checkpoints (flag), final exam (trophy), stars, bookmarks, **Test out** to skip ahead |
 | Lessons | Learn slides (meet the sound, pitch ladder, "everything you can hear" lists), quick check, then 15–40 adaptive questions |
-| Question types | *Which one is this?*, *Is this X?*, *Find the X* (tap 4 sounds), piano keyboard input |
+| Question types | *Which one is this?*, *Is this X?*, *Find the X* (tap 4 sounds), *Name the melody* (2–3 notes in order), piano keyboard input |
 | Smart quizzes | No back-to-back repeats, no duplicate sounds, look-alike choices later in a lesson, weak items asked more, missed questions come back |
 | Practice | Timed challenge per skill, best scores, transposition support |
 | Progress | First-steps unlock, XP / streak / lessons stats, accuracy per skill, activity heatmap, trouble spots, bookmarks |
-| Ranks | Weekly league (Bronze → Diamond), promotion & demotion zones |
-| Settings | Instrument (Random, Piano, Guitar, Cello, Clarinet, Trumpet, Sine), note names (Letter/Solfège ♭/♯), transposition, keyboard, answer hints, reset-your-ear chords, notifications, theme (Auto/Light/Dark), profile, feedback board, log out, delete account |
+| Endless | Infinite Random Mix across all skills, plus an endless mode for each of the 5 skills; combo tracking and best scores |
+| Settings | Instrument (Random, Piano, Guitar, Cello, Clarinet, Trumpet, Sine), note names (Letter/Solfège ♭/♯), transposition, keyboard, answer hints, reset-your-ear chords with a Harmonious / Mixed / Dissonant sound, notifications, theme (Auto/Light/Dark), feedback board, log out, delete account |
+| Layouts | Phone layout for the Android app; a desktop layout (sidebar, wide grids, keyboard shortcuts 1–9 / Y / N / Space / Enter / Esc) for the web and HTML versions |
 
-All sounds are synthesized with the Web Audio API. Progress is stored on the device only.
+Instruments use real recorded samples from the FluidR3 GM SoundFont (Frank Wen, CC BY 3.0, via midi-js-soundfonts), pitch-shifted between sample points and played through a soft room reverb. Progress is stored on the device only.
 
 ## Develop
 
