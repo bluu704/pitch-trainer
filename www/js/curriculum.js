@@ -67,7 +67,7 @@
         { t: 'Sky High', d: 'Checkpoint: the high register.', p: A12 }
       ] },
       { t: 'Melodies', d: 'Hear a short tune and name every note.', nu: 1, o: { oct: [4] }, L: [
-        { t: 'Two-Note Tunes', d: 'Name two notes in order.', p: [0, 2, 4, 5, 7], o: { seq: 2 }, seqIntro: 1 },
+        { t: 'Two-Note Tunes', d: 'Name two notes in order.', p: [0, 2, 4, 5, 7], o: { seq: 2 }, slides: 'seq' },
         { t: 'White-Key Tunes', d: 'Two notes, any white key.', p: W, o: { seq: 2 } },
         { t: 'Three-Note Tunes', d: 'Name three notes in order.', p: [0, 2, 4, 5, 7], o: { seq: 3 } },
         { t: 'Chromatic Tunes', d: 'Two notes, all 12.', p: A12, o: { seq: 2 } },
@@ -78,6 +78,12 @@
         { t: 'Everything Everywhere', d: 'All 12 across five octaves.', p: A12 },
         { t: 'Timbre Shuffle', d: 'Five octaves, random instruments.', p: A12, o: { inst: 'random' } },
         { t: 'Five Octaves', d: 'Checkpoint: five octaves.', p: A12 }
+      ] },
+      { t: 'Odd One Out', d: 'Two notes match in different octaves. Find the one that doesn\'t.', nu: 1, o: { oct: [3, 4, 5], only: 'odd' }, L: [
+        { t: 'Octave Twins', d: 'C, E, and G across octaves.', p: [0, 4, 7], slides: 'odd' },
+        { t: 'White-Key Twins', d: 'White keys across octaves.', p: W },
+        { t: 'Chromatic Twins', d: 'All 12 across octaves.', p: A12 },
+        { t: 'Odd One Out', d: 'Checkpoint: spot the different note.', p: A12 }
       ] },
       { t: 'Absolute Pitch', d: '12 Notes. 3 Octaves. Random. No Mercy.', o: { oct: [3, 4, 5], inst: 'random' }, L: [
         { t: 'Random Timbres', d: 'Every note on every instrument.', p: A12 },
@@ -160,6 +166,17 @@
         { t: 'New Voices Together', d: 'Harmonic, random instruments.', p: I12, o: { dir: 'harm' } },
         { t: 'New Voices', d: 'Checkpoint: any interval, any instrument.', p: I12, o: { dir: 'any' } }
       ] },
+      { t: 'Interval Chains', d: 'Three notes, two intervals. Name both in order.', nu: 1, o: { seq: 2, dir: 'up' }, L: [
+        { t: 'Perfect Chains', d: 'P4, P5, P8 chained together.', p: [5, 7, 12], slides: 'seq' },
+        { t: 'Thirds Chains', d: 'Thirds and perfects chained.', p: [3, 4, 5, 7] },
+        { t: 'Chains Both Ways', d: 'Every interval, up or down.', p: I12, o: { dir: 'both' } },
+        { t: 'Interval Chains', d: 'Checkpoint: interval chains.', p: I12, o: { dir: 'both' } }
+      ] },
+      { t: 'Odd Interval Out', d: 'Two intervals match. Find the different one.', nu: 1, o: { only: 'odd', dir: 'both' }, L: [
+        { t: 'Odd Thirds', d: 'Thirds and perfects.', p: [3, 4, 5, 7], slides: 'odd' },
+        { t: 'Odd Anything', d: 'Every interval.', p: I12, o: { dir: 'any' } },
+        { t: 'Odd Interval Out', d: 'Checkpoint: spot the different interval.', p: I12, o: { dir: 'any', wide: 1 } }
+      ] },
       { t: 'Final Exam: Absolute Mastery', d: 'Any interval. Any octave. Either direction.', o: { dir: 'any', wide: 1 }, L: [
         { t: 'Absolute Mastery', d: 'Any interval. Any octave. Either direction. Pass it to skip everything before it.', p: I12 }
       ] }
@@ -215,6 +232,16 @@
         { t: 'Broken & Random', d: 'Arpeggios, random instruments.', p: ALLC, o: { arp: 1 } },
         { t: 'Color Swap', d: 'Checkpoint: any chord, any instrument.', p: ALLC }
       ] },
+      { t: 'Odd Chord Out', d: 'Two chords match on different roots. Find the different one.', nu: 1, o: { only: 'odd', wide: 1 }, L: [
+        { t: 'Odd Triads', d: 'The four triads.', p: TRI, slides: 'odd' },
+        { t: 'Odd 7ths', d: 'The five 7th chords.', p: SEV },
+        { t: 'Odd Chord Out', d: 'Checkpoint: spot the different chord.', p: ALLC }
+      ] },
+      { t: 'Chord Chains', d: 'Two chords in a row. Name both.', nu: 1, o: { seq: 2 }, L: [
+        { t: 'Triad Chains', d: 'Two triads in a row.', p: TRI, slides: 'seq' },
+        { t: '7th Chains', d: 'Two 7th chords in a row.', p: SEV },
+        { t: 'Chord Chains', d: 'Checkpoint: any two chords.', p: ALLC, o: { inv: 1 } }
+      ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
@@ -268,6 +295,11 @@
         { t: 'Modes, New Voices', d: 'The modes, random instruments.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
         { t: 'All 11, New Voices', d: 'Every scale, random instruments.', p: ALLS },
         { t: 'Scale Colors', d: 'Checkpoint: any scale, any instrument.', p: ALLS }
+      ] },
+      { t: 'Odd Scale Out', d: 'Two scales match in different keys. Find the different one.', nu: 1, o: { only: 'odd', randomRoot: 1 }, L: [
+        { t: 'Odd Foundation', d: 'Major and the three minors.', p: ['major', 'natmin', 'harmin', 'melmin'], slides: 'odd' },
+        { t: 'Odd Modes', d: 'The six modes.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
+        { t: 'Odd Scale Out', d: 'Checkpoint: spot the different scale.', p: ALLS }
       ] },
       { t: 'Final: Any Scale, Any Key', d: 'All 11 scales, random keys and octaves.', o: { randomRoot: 1, wide: 1 }, L: [
         { t: 'Random Keys', d: 'Every scale in random keys.', p: ALLS },
@@ -324,6 +356,13 @@
         { t: 'Band Swap', d: 'Every progression, random instruments.', p: ALLP, o: { inst: 'random' } },
         { t: 'Low Voicings', d: 'Checkpoint: low voicings.', p: ALLP }
       ] },
+      { t: 'Chord Functions', d: 'Hear home (I), then name the chord that follows.', nu: 1, o: { func: 1 }, L: [
+        { t: 'Four or Five', d: 'IV or V after home.', p: ['IV', 'V'], slides: 'func' },
+        { t: 'Add the Six', d: 'IV, V, or the minor vi.', p: ['IV', 'V', 'vi'] },
+        { t: 'Add the Two', d: 'ii, IV, V, or vi.', p: ['ii', 'IV', 'V', 'vi'] },
+        { t: 'All Five', d: 'ii, iii, IV, V, vi.', p: ['ii', 'iii', 'IV', 'V', 'vi'] },
+        { t: 'Chord Functions', d: 'Checkpoint: every chord function, any key.', p: ['ii', 'iii', 'IV', 'V', 'vi'], o: { randomKey: 1 } }
+      ] },
       { t: 'Final: Any Progression, Any Key', d: 'All nine, random keys, real voicings.', o: { voice: 1, randomKey: 1 }, L: [
         { t: 'Any Progression, Any Key', d: 'All nine, random keys, real voicings. Pass it to skip everything before it.', p: ALLP }
       ] }
@@ -346,8 +385,8 @@
           skill: sk, idx: lessons.length, unit: ui, t: l.t, d: l.d,
           n: l.n || [], pool: (l.p || learned).slice(), kind, intro: !!l.intro,
           o: Object.assign({}, u.o || {}, l.o || {}),
-          q: l.q || (kind === 'final' ? 40 : kind === 'check' ? 26 : kind === 'learn' ? 16 : 20),
-          id: sk + '/' + slug(u.t) + '/' + li, seqIntro: !!l.seqIntro
+          q: l.q || (kind === 'final' ? 40 : kind === 'check' ? 28 : kind === 'learn' ? 18 : 22),
+          id: sk + '/' + slug(u.t) + '/' + li, slides: l.slides || null
         };
         // ensure new items are always in pool
         lesson.n.forEach((x) => { if (!lesson.pool.includes(x)) lesson.pool.push(x); });

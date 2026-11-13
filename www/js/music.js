@@ -222,6 +222,7 @@
         return { steps: seq.map((n, i) => ({ t: i * step, notes: [n], d: i === seq.length - 1 ? 0.9 : step + 0.05 })) };
       }
       case 'progs': {
+        if (!PROGS[item] && ROMAN[item]) return funcInstance(item, o);
         const key = o.key != null ? o.key : progKey(o);
         const pr = PROGS[item].chords;
         const steps = [];
@@ -250,9 +251,39 @@
   function dist(a, b) { let s = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) s += Math.abs(a[i] - b[i]); return s; }
 
   /* a melody of pitch classes (for "name the notes" questions) */
-  function seqInstance(items, o) {
+  /* a chain of items played one after another (for "name them in order" questions) */
+  function seqInstance(sk, items, o) {
+    if (Array.isArray(sk)) { o = items; items = sk; sk = 'pitch'; }
+    o = o || {};
+    if (sk === 'intervals') {
+      // 3 notes, 2 intervals; direction per step follows o.dir
+      let cur = o.root != null ? o.root : rnd(52, 64);
+      const notes = [cur];
+      items.forEach((iv) => {
+        let dir = o.dir === 'down' ? -1 : o.dir === 'both' || o.dir === 'any' ? pick([1, -1]) : 1;
+        if (cur + dir * iv > 81 || cur + dir * iv < 43) dir = -dir;
+        cur += dir * iv; notes.push(cur);
+      });
+      return { steps: notes.map((n, i) => ({ t: i * 0.8, notes: [n], d: i === notes.length - 1 ? 1.2 : 0.75 })) };
+    }
+    if (sk === 'chords') {
+      return { steps: items.map((q, i) => {
+        const root = rnd(52, 62);
+        let notes = closeVoicing(root, q);
+        if (o.inv) notes = invert(notes, rnd(0, notes.length - 1));
+        return { t: i * 1.5, notes, d: 1.4 };
+      }) };
+    }
     const oct = pick(o.oct || [4]);
     return { steps: items.map((pc, i) => ({ t: i * 0.85, notes: [12 * (oct + 1) + pc], d: i === items.length - 1 ? 1.3 : 0.8 })) };
+  }
+
+  /* chord function: home chord (I) then the target chord */
+  const FUNC_ITEMS = ['I', 'ii', 'iii', 'IV', 'V', 'vi'];
+  function funcInstance(roman, o) {
+    const key = o.key != null ? o.key : (o.randomKey ? rnd(55, 66) : 60);
+    const chord = (r) => { const [off, q] = ROMAN[r]; let root = key + off; if (root > key + 6) root -= 12; return [root - 12].concat(closeVoicing(root, q)); };
+    return { steps: [{ t: 0, notes: chord('I'), d: 1.0, v: 0.7 }, { t: 1.25, notes: chord(roman), d: 1.6 }] };
   }
 
   /* Fix the random parts of a sound so alternates can be played in the same register */
@@ -317,6 +348,6 @@
 
   window.PTMusic = {
     NAMES, NAME_OPTIONS, TRANSPOSE_OPTIONS, WHITE, BLACK, ALL12, INTERVALS, CHORDS, SCALES, ROMAN, PROGS, DESC,
-    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
+    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, FUNC_ITEMS, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
   };
 })();

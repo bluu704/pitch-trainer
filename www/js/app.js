@@ -148,7 +148,7 @@
     L.forEach((l) => { if (isDone(l)) o = Object.assign({}, o, l.o); });
     if (sk === 'pitch') { const oc = new Set(); L.forEach((l) => { if (isDone(l)) (l.o.oct || [4]).forEach((x) => oc.add(x)); }); o.oct = oc.size ? Array.from(oc) : [4]; }
     if (sk === 'intervals' && !o.dir) o.dir = 'up';
-    delete o.arp; delete o.seq; delete o.inst;
+    delete o.arp; delete o.seq; delete o.inst; delete o.only; delete o.func; delete o.reset;
     return o;
   }
   const ENDLESS_ALL = { pitch: { oct: [3, 4, 5] }, intervals: { dir: 'any', wide: 1 }, chords: { inv: 1, wide: 1 }, scales: { randomRoot: 1, desc: 1 }, progs: { randomKey: 1, voice: 1 } };
@@ -161,7 +161,7 @@
 
   const lbl = (sk, it, practice) => M.label(sk, it, { names: S.settings.names, transpose: practice && sk === 'pitch' ? (12 - S.settings.transpose) % 12 : 0 });
   const slbl = (sk, it, practice) => (sk === 'pitch' ? lbl(sk, it, practice) : M.shortLabel(sk, it));
-  const seqLbl = (sk, arr) => arr.map((x) => lbl(sk, x)).join(' – ');
+  const seqLbl = (sk, arr) => arr.map((x) => slbl(sk, x)).join(' – ');
 
   /* ================= theme & layout ================= */
   const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -399,6 +399,7 @@
       }
       case 'scales': return Math.abs(SCALE_ORDER.indexOf(a) - SCALE_ORDER.indexOf(b));
       case 'progs': {
+        if (!M.PROGS[a] || !M.PROGS[b]) { const ra = M.ROMAN[a], rb = M.ROMAN[b]; return ra && rb ? Math.min(Math.abs(ra[0] - rb[0]), 12 - Math.abs(ra[0] - rb[0])) / 2 + (ra[1] === rb[1] ? 0 : 0.5) : 3; }
         const x = M.PROGS[a].chords, y = M.PROGS[b].chords;
         let diff = Math.abs(x.length - y.length);
         for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i].toLowerCase() !== y[i].toLowerCase()) diff++;
@@ -409,7 +410,8 @@
   }
   function distractors(sk, target, pool, n, hard) {
     let c = pool.filter((x) => x !== target);
-    if (c.length < n) c = c.concat(shuffle(M.ALL_ITEMS[sk].filter((x) => x !== target && !c.includes(x))).slice(0, n - c.length));
+    const fam = sk === 'progs' && !M.PROGS[target] ? M.FUNC_ITEMS : M.ALL_ITEMS[sk];
+    if (c.length < n) c = c.concat(shuffle(fam.filter((x) => x !== target && !c.includes(x))).slice(0, n - c.length));
     if (hard) c = c.map((x) => [x, closeness(sk, target, x) + Math.random() * 0.9]).sort((p, q) => p[1] - q[1]).map((p) => p[0]);
     else c = shuffle(c);
     return c.slice(0, n);
@@ -438,16 +440,20 @@
   function makeQuestion(sk, pool, o, ctx) {
     const hard = ctx.hard;
     const small = pool.length === 1;
-    const allowFind = (sk === 'pitch' || sk === 'intervals' || sk === 'chords');
+    const allowFind = (sk === 'pitch' || sk === 'intervals' || sk === 'chords') && !o.func;
+    const allowOdd = sk !== 'progs' && !o.func;
     let kind;
     const r = Math.random();
     if (ctx.only) kind = ctx.only;
+    else if (o.only && !(o.only === 'odd' && !allowOdd)) kind = o.only;
     else if (o.seq && pool.length >= 2) kind = 'seq';
-    else if (small) kind = r < 0.7 ? 'find' : 'yesno';
+    else if (small) kind = r < 0.6 ? 'find' : r < 0.85 ? 'yesno' : allowOdd ? 'odd' : 'find';
     else if (r < 0.12 && ctx.yn < ctx.maxYN) kind = 'yesno';
-    else if (allowFind && r < 0.3) kind = 'find';
-    else if (ctx.allowSeq && sk === 'pitch' && pool.length >= 3 && r < 0.42) kind = 'seq';
+    else if (allowFind && r < 0.28) kind = 'find';
+    else if (allowOdd && r < 0.38) kind = 'odd';
+    else if (ctx.allowSeq && (sk === 'pitch' || sk === 'intervals' || sk === 'chords') && pool.length >= 3 && r < 0.5) kind = 'seq';
     else kind = 'identify';
+    if (kind === 'find' && !allowFind) kind = 'identify';
     if (kind === 'yesno') ctx.yn++;
     let target, oc, tries = 0;
     do {
@@ -462,7 +468,21 @@
     if (kind !== 'seq') { ctx.recent.push(target); if (ctx.recent.length > (pool.length >= 4 ? 2 : 1)) ctx.recent.shift(); }
     const inst = A.resolveInstrument(o.inst || S.settings.instrument);
     const q = { sk, kind, target, o: oc, inst, reset: sk === 'pitch' && (S.settings.resetEar || o.reset) };
-    q.sound = kind === 'seq' ? M.seqInstance(target, oc) : M.instance(sk, target, oc);
+    if (o.func) q.ask = 'Home first, then which chord?';
+    q.sound = kind === 'seq' ? M.seqInstance(sk, target, oc) : M.instance(sk, target, oc);
+    if (kind === 'odd') {
+      // two of one item, one of another; each in its own register so only the quality gives it away
+      const other = distractors(sk, target, pool, 1, hard)[0];
+      q.oddIdx = rnd(0, 2);
+      q.options = [0, 1, 2].map((i) => {
+        const it = i === q.oddIdx ? other : target;
+        const oo = sk === 'pitch' ? Object.assign({}, o, { oct: o.oct && o.oct.length > 1 ? o.oct : [3, 4, 5] }) : o;
+        return { it, sound: M.instance(sk, it, M.concrete(sk, oo)) };
+      });
+      // make sure the two pitch twins sit in different octaves
+      if (sk === 'pitch') { const tw = q.options.filter((x, i) => i !== q.oddIdx); if (tw[0].sound.steps[0].notes[0] === tw[1].sound.steps[0].notes[0]) tw[1].sound = { steps: [{ t: 0, notes: [tw[0].sound.steps[0].notes[0] + (tw[0].sound.steps[0].notes[0] >= 72 ? -12 : 12)], d: 1.5 }] }; }
+      q.odd = other;
+    }
     if (kind === 'identify' || kind === 'seq') q.choices = M.ALL_ITEMS[sk].filter((x) => pool.includes(x));
     if (kind === 'yesno') setYN(q, target, pool, Math.random() < 0.5, hard);
     if (kind === 'find') {
@@ -500,8 +520,8 @@
       const ans = shuffle([true, false, Math.random() < 0.5]);
       qc.forEach((q, i) => setYN(q, l.n[i % l.n.length], l.pool, ans[i], i > 0));
       qc.forEach((q) => steps.push({ type: 'q', q, phase: 'quick' }));
-    } else if (mode === 'lesson' && l.seqIntro) {
-      seqSlides().forEach((s) => steps.push({ type: 'slide', s }));
+    } else if (mode === 'lesson' && l.slides) {
+      typeSlides(l.slides, sk).forEach((s) => steps.push({ type: 'slide', s }));
     }
     const count = mode === 'testout' ? (l.kind === 'final' ? l.q : 15) : l.q;
     makeQuiz(sk, l.pool, l.o, count, { newItems: l.n, hard: mode === 'testout' || l.kind !== 'learn' }).forEach((q) => steps.push({ type: 'q', q, phase: 'quiz' }));
@@ -574,10 +594,20 @@
     scales: ['What is scale detection?', 'A scale is a ladder of notes. Each one has its own flavor, from bright Lydian to dark Phrygian.', ['Eight notes, one {flavor}.', 'Start with the {major} scale.', 'Grow to all 11 scales, any key.']],
     progs: ['What are progressions?', 'Songs move through chords in patterns. Recognize the pattern and you can play along by ear.', ['Four chords, one {pattern}.', 'Start with the classic {I-IV-V-I}.', 'Grow to all nine, any key.']]
   };
-  function seqSlides() {
-    const s = [{ title: 'Name the melody', lead: 'Now you will hear a short tune of two or three notes. Tap the notes in the order you hear them.',
-      html: li(['Listen to the {whole tune} first.', 'Tap each note {in order}. Use undo if you slip.', 'Tap the wave to hear the tune again.']) }];
-    s[0].tag = 'Learn · 1 of 1';
+  function typeSlides(kind, sk) {
+    const T = {
+      seq: sk === 'pitch' ? ['Name the melody', 'Now you will hear a short tune of two or three notes. Tap the notes in the order you hear them.', ['Listen to the {whole tune} first.', 'Tap each note {in order}. Use undo if you slip.', 'Tap the wave to hear the tune again.']]
+        : sk === 'intervals' ? ['Interval chains', 'You will hear three notes in a row. That makes two intervals. Name both, in order.', ['First interval: note 1 to note 2.', 'Second interval: note 2 to note 3.', 'Tap them {in order}. Use undo if you slip.']]
+          : ['Chord chains', 'You will hear two chords in a row, each on its own root. Name both qualities, in order.', ['Listen for the {color} of each chord.', 'The roots change, so ignore how high they are.', 'Tap them {in order}. Use undo if you slip.']],
+      odd: ['Odd one out', 'You will get three sounds. Two of them are the same kind, played in different places. One is different.', ['Tap {1}, {2}, and {3} to listen.', 'Ignore how high or low they are.', 'Pick the {one that doesn\'t belong}, then submit.']],
+      func: ['Chord functions', 'Every key has a home chord, I. Each other chord pulls away from home in its own way.', ['First you hear {home} (I).', 'Then one more chord: {ii, iii, IV, V, or vi}.', 'Name it by how it feels next to home.']]
+    }[kind];
+    const s = [{ title: T[0], lead: T[1], html: li(T[2]), tag: 'Learn · 1 of 1' }];
+    if (kind === 'func') {
+      s.push({ title: 'Hear the functions', lead: 'Tap each to hear home, then that chord.', tag: 'Learn · 2 of 2',
+        html: `<div class="list">${['IV', 'V', 'vi', 'ii', 'iii'].map((r) => `<button class="lrow" ${hearBtn('progs', r, {})}><div class="nm"><b>${r}</b><small>${({ IV: 'warm, lifting', V: 'tense, wants home', vi: 'soft, sad', ii: 'gentle, moving', iii: 'dreamy, in-between' })[r]}</small></div><div class="vis"></div><span class="tri"></span></button>`).join('')}</div>` });
+      s[0].tag = 'Learn · 1 of 2';
+    }
     return s;
   }
   function learnSlides(sk, l) {
@@ -685,15 +715,20 @@
           <div class="qask">Tap each to listen, then pick one</div>
           <div class="grid" style="grid-template-columns:repeat(3,1fr)">${q.options.map((op, i) => `<button class="ch-b ${L.sel === i ? 'sel' : ''}" data-act="opt" data-i="${i}" data-k="${i + 1}" ${i === 3 ? 'style="grid-column:2"' : ''}>${I.vol}${i + 1}</button>`).join('')}</div>`;
         foot = `<button class="btn" data-act="submit" ${L.sel == null ? 'disabled' : ''}>Submit</button>`;
+      } else if (q.kind === 'odd') {
+        body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}</div><div style="margin:auto 0;text-align:center"><div class="qtitle">Which one is <span class="cc">different</span>?</div></div>
+          <div class="qask">Tap each to listen, then pick the odd one out</div>
+          <div class="grid g3">${q.options.map((op, i) => `<button class="ch-b ${L.sel === i ? 'sel' : ''}" data-act="opt" data-i="${i}" data-k="${i + 1}">${I.vol}${i + 1}</button>`).join('')}</div>`;
+        foot = `<button class="btn" data-act="submit" ${L.sel == null ? 'disabled' : ''}>Submit</button>`;
       } else if (q.kind === 'seq') {
         L.seqPicks = L.seqPicks || [];
-        body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}<div class="qtitle">Name the ${q.target.length} notes in order</div></div>
+        body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}<div class="qtitle">Name the ${q.target.length} ${({ pitch: 'notes', intervals: 'intervals', chords: 'chords' })[q.sk] || 'sounds'} in order</div></div>
           <canvas class="wave" data-act="replay"></canvas>
-          <div class="slots">${q.target.map((_, i) => `<span class="slot ${L.seqPicks[i] != null ? 'fill' : ''}">${L.seqPicks[i] != null ? esc(lbl(q.sk, L.seqPicks[i])) : i + 1}</span>`).join('')}<button class="iconbtn" data-act="undo" title="Undo">${I.undo}</button></div>
+          <div class="slots">${q.target.map((_, i) => `<span class="slot ${L.seqPicks[i] != null ? 'fill' : ''}">${L.seqPicks[i] != null ? esc(slbl(q.sk, L.seqPicks[i])) : i + 1}</span>`).join('')}<button class="iconbtn" data-act="undo" title="Undo">${I.undo}</button></div>
           ${choicesHTML(q, false)}`;
       } else {
         body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}</div><canvas class="wave" data-act="replay"></canvas>
-          <div class="qask">${M.SKILLS[q.sk].ask}</div>${choicesHTML(q, false)}`;
+          <div class="qask">${q.ask || M.SKILLS[q.sk].ask}</div>${choicesHTML(q, false)}`;
       }
     }
     const right = endless ? `<span class="combo">${I.flame}${L.combo}</span><span class="pcount">${L.correct}/${L.total}</span>` : `<span class="pcount">${qn ? qn + '/' + quizSteps.length : ''}</span>`;
@@ -708,7 +743,7 @@
     const sk = q.sk;
     if (sk === 'pitch' && S.settings.keyboard) return keyboardHTML(q.choices, practice);
     const n = q.choices.length;
-    const g = sk === 'scales' || sk === 'progs' ? 'g2' : sk === 'chords' ? (n <= 4 ? 'g2' : 'g3') : n === 2 ? 'g2' : n === 3 ? 'g3' : n <= 4 ? 'g2' : '';
+    const g = q.o && q.o.func ? (n <= 2 ? 'g2' : 'g3') : sk === 'scales' || sk === 'progs' ? 'g2' : sk === 'chords' ? (n <= 4 ? 'g2' : 'g3') : n === 2 ? 'g2' : n === 3 ? 'g3' : n <= 4 ? 'g2' : '';
     return `<div class="grid ${g}">${q.choices.map((c, i) => `<button class="ch-b" data-act="pick" data-k="${i < 9 ? i + 1 : i === 9 ? 0 : ''}" data-it="${esc(JSON.stringify(c))}">${esc(sk === 'pitch' ? lbl(sk, c, practice) : M.shortLabel(sk, c))}${sk === 'chords' ? `<small>${M.CHORDS[c].kind === 'triad' ? 'triad' : '7th'}</small>` : ''}</button>`).join('')}</div>`;
   }
   function keyboardHTML(choices, practice) {
@@ -737,13 +772,14 @@
     if (st.phase === 'quiz' && !st.retry) { L.total++; if (ok) L.correct++; }
     if (L.mode === 'endless') { L.combo = ok ? L.combo + 1 : 0; L.bestCombo = Math.max(L.bestCombo, L.combo); }
     if (q.kind === 'seq') q.target.forEach((t, i) => recordItem(q.sk, t, picked[i] === t));
+    else if (q.kind === 'odd') { recordItem(q.sk, q.target, ok); recordItem(q.sk, q.odd, ok); }
     else recordItem(q.sk, q.target, ok);
     if (q.kind === 'yesno' && q.asked !== q.target) recordItem(q.sk, q.asked, ok);
     A.sfx(ok ? 'good' : 'bad');
     if (!ok && st.phase === 'quiz' && L.mode === 'lesson' && L.requeue < 6 && !st.retry) {
       L.requeue++;
-      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: q.kind === 'seq' ? 'seq' : L.l.pool.length > 1 ? 'identify' : 'find', hard: true })[0];
-      if (q.kind !== 'seq') {
+      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: q.kind === 'seq' || q.kind === 'odd' ? q.kind : L.l.pool.length > 1 ? 'identify' : 'find', hard: true })[0];
+      if (q.kind !== 'seq' && q.kind !== 'odd') {
         nq.target = q.target; nq.sound = M.instance(q.sk, q.target, nq.o);
         if (nq.kind === 'find') nq.options = shuffle([q.target].concat(distractors(q.sk, q.target, L.l.pool, 3, true))).map((it) => ({ it, sound: M.instance(q.sk, it, nq.o) }));
       }
@@ -760,6 +796,7 @@
     } else lesson.querySelectorAll('[data-act="pick"],[data-act="undo"]').forEach((b) => { b.disabled = true; });
     lesson.querySelectorAll('[data-act="yn"]').forEach((b) => { b.disabled = true; if ((b.dataset.v === '1') !== picked) b.classList.add('faded'); });
     if (q.kind === 'find') lesson.querySelectorAll('[data-act="opt"]').forEach((b) => { const op = q.options[+b.dataset.i]; if (op.it === q.target) b.classList.add('ok'); else if (+b.dataset.i === L.sel) b.classList.add('bad'); });
+    if (q.kind === 'odd') lesson.querySelectorAll('[data-act="opt"]').forEach((b) => { const i = +b.dataset.i; b.innerHTML = I.vol + esc(slbl(q.sk, q.options[i].it)); if (i === q.oddIdx) b.classList.add('ok'); else if (i === L.sel) b.classList.add('bad'); });
     const foot = lesson.querySelector('.lfoot'); if (foot) foot.style.visibility = 'hidden';
     const fb = document.createElement('div');
     fb.className = 'feedback ' + (ok ? 'good' : 'bad');
@@ -769,6 +806,7 @@
       if (q.kind === 'yesno') msg = q.asked === q.target ? `It was ${nm(q.target)}.` : `That was ${nm(q.target)}, not ${nm(q.asked)}.`;
       else if (q.kind === 'find') msg = `The ${nm(q.target)} was number ${q.options.findIndex((o) => o.it === q.target) + 1}.`;
       else if (q.kind === 'seq') msg = `Correct answer: <b>${esc(seqLbl(q.sk, q.target))}</b>`;
+      else if (q.kind === 'odd') msg = `Number ${q.oddIdx + 1} was different: <b>${nm(q.odd)}</b>. The others were ${nm(q.target)}. Tap any number to hear it again.`;
       else msg = `Correct answer: <b>${nm(q.target)}</b>`;
     } else msg = L.mode === 'endless' && L.combo >= 3 ? `${L.combo} in a row!` : pick(['Your ear is getting sharper.', 'Spot on.', 'Keep it going!', 'That\'s the one.']);
     const yours = compareItem(q, picked);
@@ -778,7 +816,7 @@
     lesson.appendChild(fb);
     if (!ok && S.settings.hints && yours != null) compareSeq(q, yours);
   }
-  function soundFor(q, item) { return q.kind === 'seq' ? M.seqInstance(item, q.o) : M.instance(q.sk, item, q.o); }
+  function soundFor(q, item) { return q.kind === 'seq' ? M.seqInstance(q.sk, item, q.o) : M.instance(q.sk, item, q.o); }
   function compareItem(q, picked) {
     if (q.kind === 'identify' || q.kind === 'seq') return picked;
     if (q.kind === 'find') return LS.sel != null ? q.options[LS.sel].it : null;
@@ -853,6 +891,7 @@
   }
   function afterFinish(first) { pop(); if (first) setTimeout(streakModal, 250); }
   function streakModal() {
+    const t = top(); if (t && (t.name === 'lesson' || t.name === 'practice')) return; // never cover an active lesson
     const n = streak(), m = monday(new Date()), tk = today(), L = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     const days = L.map((l, i) => { const k = dkey(addDays(m, i)); const hit = !!S.days[k]; const past = k < tk;
       return `<div class="wd ${hit ? 'hit' : ''}"><span>${l}</span><div class="dot" style="${!hit && !past ? 'background:var(--soft);border-color:var(--soft)' : ''}">${hit ? I.check : past ? I.x : ''}</div></div>`; }).join('');
@@ -1118,13 +1157,13 @@
     const L = LS, st = L.steps[L.i], q = st.q;
     if (st.answered) return;
     L.seqPicks = (L.seqPicks || []).concat([it]);
-    A.play(M.instance('pitch', it, q.o).steps, q.inst);
+    if (q.sk === 'pitch') A.play(M.instance('pitch', it, q.o).steps, q.inst); else A.sfx('tap');
     if (L.seqPicks.length >= q.target.length) { const picks = L.seqPicks.slice(); updateSlots(q); judge(same(picks, q.target), picks); }
     else updateSlots(q);
   }
   function updateSlots(q) {
     const el = document.querySelector('.slots'); if (!el) return;
-    el.querySelectorAll('.slot').forEach((s, i) => { const v = LS.seqPicks[i]; s.classList.toggle('fill', v != null); s.textContent = v != null ? lbl(q.sk, v) : i + 1; });
+    el.querySelectorAll('.slot').forEach((s, i) => { const v = LS.seqPicks[i]; s.classList.toggle('fill', v != null); s.textContent = v != null ? slbl(q.sk, v) : i + 1; });
   }
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
@@ -1171,7 +1210,8 @@
         document.querySelectorAll('[data-act="opt"]').forEach((x) => x.classList.toggle('sel', +x.dataset.i === i));
         const sb = document.querySelector('[data-act="submit"]'); if (sb) sb.disabled = false;
         A.play(q.options[i].sound.steps, q.inst); break; }
-      case 'submit': { const q = LS.steps[LS.i].q; if (LS.sel == null) break; judge(q.options[LS.sel].it === q.target, q.options[LS.sel].it); break; }
+      case 'submit': { const q = LS.steps[LS.i].q; if (LS.sel == null) break;
+        if (q.kind === 'odd') judge(LS.sel === q.oddIdx, q.options[LS.sel].it); else judge(q.options[LS.sel].it === q.target, q.options[LS.sel].it); break; }
       case 'cmp': { const st = LS.steps[LS.i], q = st.q; const y = compareItem(q, st.picked);
         A.play((b.dataset.w === 'you' ? soundFor(q, y) : q.sound).steps, q.inst); break; }
       case 'pgo': PS.started = true; PS.left = PS.time; stopTimers(); timers.push(setInterval(practiceTick, 1000)); nextPracticeQ(); break;
@@ -1250,5 +1290,5 @@
   // load the chosen instrument now, the rest in the background
   A.preload(S.settings.instrument === 'random' || S.settings.instrument === 'sine' ? ['piano'] : [S.settings.instrument]).then(() => setTimeout(() => A.preload(), 1500));
   document.addEventListener('visibilitychange', () => { if (document.hidden) A.stopAll(); else if (!top()) render(); });
-  window.PT = { state: () => S, startLesson, startEndless, nav };
+  window.PT = { state: () => S, cur: () => LS, ps: () => PS, startLesson, startEndless, startReview, startPractice, nav, makeQuiz, makeQuestion, newCtx, practiceOpts, practicePool, lessons: lessonsOf };
 })();
