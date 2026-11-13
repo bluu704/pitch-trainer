@@ -453,7 +453,8 @@
     else if (allowOdd && r < 0.38) kind = 'odd';
     else if (ctx.allowSeq && (sk === 'pitch' || sk === 'intervals' || sk === 'chords') && pool.length >= 3 && r < 0.5) kind = 'seq';
     else kind = 'identify';
-    if (kind === 'find' && !allowFind) kind = 'identify';
+    if (kind === 'find' && !allowFind) kind = small ? (allowOdd && r < 0.5 ? 'odd' : 'yesno') : 'identify';
+    if (kind === 'identify' && small) kind = allowFind ? 'find' : 'yesno';
     if (kind === 'yesno') ctx.yn++;
     let target, oc, tries = 0;
     do {
@@ -483,7 +484,8 @@
       if (sk === 'pitch') { const tw = q.options.filter((x, i) => i !== q.oddIdx); if (tw[0].sound.steps[0].notes[0] === tw[1].sound.steps[0].notes[0]) tw[1].sound = { steps: [{ t: 0, notes: [tw[0].sound.steps[0].notes[0] + (tw[0].sound.steps[0].notes[0] >= 72 ? -12 : 12)], d: 1.5 }] }; }
       q.odd = other;
     }
-    if (kind === 'identify' || kind === 'seq') q.choices = M.ALL_ITEMS[sk].filter((x) => pool.includes(x));
+    const fam = sk === 'progs' && o.func ? M.FUNC_ITEMS : M.ALL_ITEMS[sk];
+    if (kind === 'identify' || kind === 'seq') q.choices = fam.filter((x) => pool.includes(x));
     if (kind === 'yesno') setYN(q, target, pool, Math.random() < 0.5, hard);
     if (kind === 'find') {
       const opts = shuffle([target].concat(distractors(sk, target, pool, 3, hard)));
@@ -778,10 +780,14 @@
     A.sfx(ok ? 'good' : 'bad');
     if (!ok && st.phase === 'quiz' && L.mode === 'lesson' && L.requeue < 6 && !st.retry) {
       L.requeue++;
-      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: q.kind === 'seq' || q.kind === 'odd' ? q.kind : L.l.pool.length > 1 ? 'identify' : 'find', hard: true })[0];
-      if (q.kind !== 'seq' && q.kind !== 'odd') {
-        nq.target = q.target; nq.sound = M.instance(q.sk, q.target, nq.o);
-        if (nq.kind === 'find') nq.options = shuffle([q.target].concat(distractors(q.sk, q.target, L.l.pool, 3, true))).map((it) => ({ it, sound: M.instance(q.sk, it, nq.o) }));
+      const small = L.l.pool.length < 2, canFind = q.sk === 'pitch' || q.sk === 'intervals' || q.sk === 'chords';
+      const retryKind = q.kind === 'seq' || q.kind === 'odd' ? q.kind : !small ? 'identify' : canFind ? 'find' : 'yesno';
+      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: retryKind, hard: true })[0];
+      const item = q.kind === 'yesno' ? q.asked : q.target;
+      if (retryKind === 'yesno') setYN(nq, item, L.l.pool, Math.random() < 0.5, true);
+      else if (q.kind !== 'seq' && q.kind !== 'odd' && L.l.pool.includes(item)) {
+        nq.target = item; nq.sound = M.instance(q.sk, item, nq.o);
+        if (nq.kind === 'find') nq.options = shuffle([item].concat(distractors(q.sk, item, L.l.pool, 3, true))).map((it) => ({ it, sound: M.instance(q.sk, it, nq.o) }));
       }
       L.steps.push({ type: 'q', q: nq, phase: 'quiz', retry: true });
     }
