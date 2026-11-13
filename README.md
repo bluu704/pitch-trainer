@@ -13,10 +13,10 @@ Duolingo-style ear training: learn to hear **notes, intervals, chords, scales, a
 | Area | What's inside |
 |---|---|
 | Home | Greeting, streak counter, week strip, today's session card, 5 skill cards with progress |
-| Skills | Pitch (49 lessons), Intervals (54), Chords (37), Scales (36), Progressions (35) — 211 in total |
+| Skills | Pitch (53 lessons), Intervals (61), Chords (43), Scales (39), Progressions (40) — 236 in total |
 | Skill path | Units, zig-zag lesson nodes, checkpoints (flag), final exam (trophy), stars, bookmarks, **Test out** to skip ahead |
-| Lessons | Learn slides (meet the sound, pitch ladder, "everything you can hear" lists), quick check, then 15–40 adaptive questions |
-| Question types | *Which one is this?*, *Is this X?*, *Find the X* (tap 4 sounds), *Name the melody* (2–3 notes in order), piano keyboard input |
+| Lessons | Learn slides (meet the sound, pitch ladder, "everything you can hear" lists), quick check, then 18–40 adaptive questions |
+| Question types | *Which one is this?*, *Is this X?*, *Find the X* (tap 4 sounds), *Name the melody* (2–3 notes in order), *Odd one out*, *Interval / chord chains*, *Chord functions* (I → ii/iii/IV/V/vi), piano keyboard input |
 | Smart quizzes | No back-to-back repeats, no duplicate sounds, look-alike choices later in a lesson, weak items asked more, missed questions come back |
 | Practice | Timed challenge per skill, best scores, transposition support |
 | Progress | First-steps unlock, XP / streak / lessons stats, accuracy per skill, activity heatmap, trouble spots, bookmarks |
