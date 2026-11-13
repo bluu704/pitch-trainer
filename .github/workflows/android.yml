@@ -1,0 +1,67 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bundle single-file HTML
+        run: node scripts/bundle.mjs
+
+      - name: Sync web app into Android project
+        run: npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Collect files
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk PitchTrainer.apk
+          ls -la PitchTrainer.apk pitch-trainer.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PitchTrainer-apk
+          path: |
+            PitchTrainer.apk
+            pitch-trainer.html
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Pitch Trainer 1.0.${{ github.run_number }}
+          make_latest: true
+          body: |
+            **Android:** download `PitchTrainer.apk` below and open it on your phone (allow "Install unknown apps").
+            **Web:** download `pitch-trainer.html` and open it in any browser.
+          files: |
+            PitchTrainer.apk
+            pitch-trainer.html

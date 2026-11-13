@@ -1,0 +1,10 @@
+{
+  "appId": "com.bluu704.pitchtrainer",
+  "appName": "Pitch Trainer",
+  "webDir": "www",
+  "android": { "backgroundColor": "#F7F9FB" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#FF9600", "showSpinner": false, "androidScaleType": "CENTER_CROP" },
+    "LocalNotifications": { "smallIcon": "ic_stat_note", "iconColor": "#FF9600" }
+  }
+}
