@@ -151,7 +151,7 @@
     delete o.arp; delete o.seq; delete o.inst; delete o.only; delete o.func; delete o.reset; delete o.fam; delete o.sev; delete o.chordRoot; delete o.together;
     return o;
   }
-  const ENDLESS_ALL = { pitch: { oct: [3, 4, 5] }, intervals: { dir: 'any', wide: 1 }, chords: { inv: 1, wide: 1 }, scales: { randomRoot: 1, desc: 1 }, progs: { randomKey: 1, voice: 1 } };
+  const ENDLESS_ALL = { pitch: { oct: [3, 4, 5] }, intervals: { dir: 'any', wide: 1 }, chords: { vary: 1, wide: 1 }, scales: { randomRoot: 1, desc: 1 }, progs: { randomKey: 1, voice: 1 } };
   function itemStat(sk, it) { return S.items[sk + ':' + it] || [0, 0]; }
   function recordItem(sk, it, ok) { const k = sk + ':' + it; const v = S.items[k] || [0, 0]; v[0]++; if (ok) v[1]++; S.items[k] = v; }
   function skillAcc(sk) { let a = 0, c = 0; Object.keys(S.items).forEach((k) => { if (k.startsWith(sk + ':')) { a += S.items[k][0]; c += S.items[k][1]; } }); return a ? c / a : null; }
@@ -614,17 +614,17 @@
     progs: ['What are progressions?', 'Songs move through chords in patterns. Recognize the pattern and you can play along by ear.', ['Four chords, one {pattern}.', 'Start with the classic {I-IV-V-I}.', 'Grow to all nine, any key.']]
   };
   function shapeList(pool) {
-    return `<div class="list">${pool.map((id) => `<button class="lrow" ${hearBtn('chords', id, { inst: 'guitar' })}><div class="nm"><b>${esc(M.shortLabel('chords', id))}</b><small>${M.OPENV[id] ? esc(M.OPENV_FAM[M.OPENV[id][3]]) : 'open chord'}</small></div><div class="vis"><span class="tab">${esc(M.shapeOf(id))}</span></div><span class="tri"></span></button>`).join('')}</div>`;
+    return `<div class="list">${pool.map((id) => `<button class="lrow" ${hearBtn('chords', id, { inst: 'guitar' })}><div class="nm"><b>${esc(M.shortLabel('chords', id))}</b><small>${M.OPENV[id] ? esc(M.OPENV_FAM[M.OPENV[id][3]]) : 'open chord'}</small></div><div class="vis"></div><span class="tri"></span></button>`).join('')}</div>`;
   }
   function typeSlides(kind, sk, l) {
     const pool = (l && l.pool) || [];
     if (kind === 'open' || kind === 'openv') {
       const intro = kind === 'open'
-        ? ['Open guitar chords', 'These are the first chords every guitarist learns. Each one rings with open strings, so each has its own sound you can learn to recognize.', ['Shapes read {low E to high E}: x = not played, 0 = open string.', 'Listen for the {bass note} and the {color}: major, minor, 7th, sus.', 'Played on guitar, strummed low to high.']]
+        ? ['Open guitar chords', 'These are the first chords every guitarist learns. Each one rings with open strings, so each has its own sound you can learn to recognize.', ['Listen for the {bass note}: it tells you the chord name.', 'Then the {color}: major, minor, 7th, sus, add9.', 'Played on guitar, strummed low to high.']]
         : ['One shape, many chords', 'Keep the 1st and 2nd strings (E and B) open and slide one left-hand shape along the neck. You only fret the root and 5th; the open strings add the 3rds, 7ths, and tensions.', ['The same shape makes {Cmaj7} at fret 3, {Dsus2(add13)} at fret 5, and {G6} at fret 10.', 'The {diamond} shape from the 6th string adds a 3rd: E, Aadd9, Cmaj7, D6/9 and more.', 'Drop the 6th string and the 5th becomes the bass: slash chords like {G6/D}.']];
       return [
         { title: intro[0], lead: intro[1], html: li(intro[2]), tag: 'Learn · 1 of 2' },
-        { title: 'The shapes in this lesson', lead: 'Tap any shape to hear it.', html: shapeList(pool), tag: 'Learn · 2 of 2' }
+        { title: 'The chords in this lesson', lead: 'Tap any chord to hear it.', html: shapeList(pool), tag: 'Learn · 2 of 2' }
       ];
     }
     const T = {
@@ -635,6 +635,7 @@
       func: ['Chord functions', 'Every key has a home chord, I. Each other chord pulls away from home in its own way.', ['First you hear {home} (I).', 'Then one more chord, like {IV, V, vi}, or a borrowed {iv, ♭VII, ♭VI}.', 'Name it by how it feels next to home.']],
       dyad: ['Two at once', 'Now two notes sound together. Pick out both of them.', ['Listen for the {lower} note, then the {upper} one.', 'Tap them {low to high}. Use undo if you slip.', 'Hum each note separately if it helps.']],
       root: ['Chord roots', 'A chord is built on one note, its root. Here the root is also in the bass.', ['Listen to the {lowest note} of the chord.', 'Name that note, just like a single note.', 'Major or minor does not matter, only the root.']],
+      vary: ['Any voicing', 'A chord keeps its name however its notes are stacked: close together, spread over two octaves, or with a different note on the bottom. Here every question uses a new voicing.', ['Ignore {how high} and {how wide} it is.', 'Listen for the {color}: bright, dark, tense, dreamy.', 'Tap the wave to hear the same voicing again.']],
       inv: ['Inversions', 'The same chord can be stacked with a different note on the bottom. That bottom note changes the color.', ['{Root position}: the root is on the bottom. Solid and settled.', '{1st inversion}: the 3rd on the bottom. Lighter and moving.', '{2nd inversion}: the 5th on the bottom. Open and unstable. 7th chords add a {3rd inversion} with the 7th on the bottom.']]
     }[kind];
     const s = [{ title: T[0], lead: T[1], html: li(T[2]), tag: 'Learn · 1 of 1' }];
@@ -878,7 +879,7 @@
     const yours = compareItem(q, picked);
     const yLabel = yours == null ? '' : q.kind === 'seq' ? 'Yours' : q.kind === 'yesno' ? nm(yours) : 'Yours: ' + nm(yours);
     const cmp = !ok && yours != null ? `<div class="cmp"><button data-act="cmp" data-w="you">${I.play} ${yLabel}</button><button data-act="cmp" data-w="ans">${I.play} Answer${q.kind === 'seq' ? '' : ': ' + nm(q.target)}</button></div>` : '';
-    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${scaleFeedback(q)}${shapeFeedback(q)}${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
+    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${scaleFeedback(q)}${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
     lesson.appendChild(fb);
     // keep the marked answers visible above the feedback panel
     const lb = lesson.querySelector('.lbody'), ft = lesson.querySelector('.lfoot');
@@ -897,10 +898,6 @@
     return `<div class="fb-spell"><div class="fs-h">${q.kind === 'odd' ? 'The odd one: ' : 'You heard: '}<b>${esc(M.SCALES[item].name)} on ${esc(sp.root)}</b>${down ? ' · played downward' : ''}</div>
       <div class="sp-notes">${sp.notes.map((n) => `<span class="sp-n ${n.out ? 'out' : ''}">${esc(n.name)}</span>`).join('')}</div>
       <div class="sp-sig"><b>Key signature:</b> ${esc(sig)}, like ${esc(sp.sigMajor)} major${sp.notes.some((n) => n.out) ? '. Highlighted notes are outside it.' : '.'}</div></div>`;
-  }
-  function shapeFeedback(q) {
-    if (q.sk !== 'chords' || !(q.o.fam === 'open' || q.o.fam === 'openv') || q.kind !== 'identify' && q.kind !== 'yesno') return '';
-    return `<div class="fb-spell"><div class="fs-h">You heard: <b>${esc(M.shortLabel('chords', q.target))}</b></div><div class="sp-sig"><b>Shape:</b> <span class="tab">${esc(M.shapeOf(q.target))}</span> (low E to high E)</div></div>`;
   }
   function soundFor(q, item) { return q.kind === 'seq' ? M.seqInstance(q.sk, item, q.o) : M.instance(q.sk, item, q.o); }
   function compareItem(q, picked) {

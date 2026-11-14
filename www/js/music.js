@@ -357,7 +357,7 @@
     }
   }
 
-  function chordTag(item) { return CHORDS[item] ? CHORD_TAG[CHORDS[item].kind] : OPEN[item] ? OPEN[item][1] : OPENV[item] ? OPENV[item][1] : ''; }
+  function chordTag(item) { return CHORDS[item] ? CHORD_TAG[CHORDS[item].kind] : ''; }
   function chordPcs(item) { return CHORDS[item] ? CHORDS[item].iv.map((x) => x % 12) : OPEN[item] ? openNotes(item).map((n) => n % 12) : OPENV[item] ? OPENV[item][2].map((n) => n % 12) : []; }
   function shapeOf(item) { return OPEN[item] ? OPEN[item][1].split('').join('-') : OPENV[item] ? OPENV[item][1] : null; }
 
@@ -370,6 +370,35 @@
     const out = notes.slice();
     for (let i = 0; i < n; i++) { out.push(out.shift() + 12); }
     return out;
+  }
+
+  /* ---------- varied voicings: the same chord stacked different ways ---------- */
+  const VOICINGS = ['close', 'inv', 'drop2', 'drop3', 'spread'];
+  function voiceChord(root, ivs, style) {
+    const close = ivs.map((x) => root + x);
+    if (close.length < 3 && (style === 'drop2' || style === 'drop3')) style = Math.random() < 0.5 ? 'inv' : 'spread';
+    switch (style) {
+      case 'inv': return invert(close, rnd(1, Math.max(1, close.length - 1)));
+      case 'drop2': { if (close.length < 4) return [close[1] - 12].concat([close[0], close[2]]).sort((a, b) => a - b); const c = close.slice(0, 4); const top2 = c[2]; return [top2 - 12, c[0], c[1], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
+      case 'drop3': { if (close.length < 4) return [close[0] - 12, close[1], close[2] + 12].sort((a, b) => a - b); const c = close.slice(0, 4); return [c[1] - 12, c[0], c[2], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
+      case 'spread': return spreadVoicing(ivs.map((x) => (root + x) % 12), root % 12, root);
+      default: return close;
+    }
+  }
+  /* root (or given bass) low, every other pitch class placed somewhere above, at least a 3rd apart where possible */
+  function spreadVoicing(pcs, bassPc, near) {
+    let bass = 36 + ((bassPc - 36) % 12 + 12) % 12; if (bass < 40) bass += 12;
+    const upper = [...new Set(pcs)].filter((pc) => pc !== bassPc || pcs.filter((x) => x === bassPc).length > 1);
+    const out = [bass];
+    let floor = bass + 7;
+    shuffleArr(upper.slice()).forEach((pc) => {
+      let n = floor + ((pc - floor) % 12 + 12) % 12;
+      if (Math.random() < 0.35) n += 12;
+      while (n > 81) n -= 12;
+      out.push(n); floor = Math.min(n + 3, 72);
+    });
+    if (!out.slice(1).some((n) => n % 12 === bassPc) && Math.random() < 0.6) out.push(bass + 12 * rnd(1, 2)); // double the bass note above, like a guitarist would
+    return [...new Set(out)].sort((a, b) => a - b);
   }
 
   /* register ranges per option */
@@ -405,8 +434,12 @@
         return { steps, meta: { dir } };
       }
       case 'chords': {
-        if (OPEN[item]) return { steps: [{ t: 0, notes: openNotes(item), d: 2.2 }] };
-        if (OPENV[item]) return { steps: [{ t: 0, notes: OPENV[item][2].slice(), d: 2.4 }] };
+        if (OPEN[item] || OPENV[item]) {
+          const notes = OPEN[item] ? openNotes(item) : OPENV[item][2].slice();
+          // vary: the same chord (same notes, same bass) stacked a different way each time
+          if (o.vary) return { steps: [{ t: 0, notes: o.voicing || spreadVoicing(notes.map((n) => n % 12), notes[0] % 12), d: 2.3 }] };
+          return { steps: [{ t: 0, notes, d: 2.3 }] };
+        }
         if (INV[item]) {
           const q = o.invQ || (o.sev ? pick(['maj7', 'min7', 'dom7']) : pick(['maj', 'min']));
           const r = o.root != null ? o.root : rnd(52, 60);
@@ -415,6 +448,10 @@
         }
         const [lo, hi] = chordRange(o);
         const root = o.root != null ? o.root : rnd(lo, hi);
+        if (o.vary) {
+          const style = o.vstyle || (o.vary === 1 || o.vary === true ? pick(VOICINGS) : o.vary);
+          return { steps: [{ t: 0, notes: voiceChord(root, CHORDS[item].iv, style), d: 2.1 }], meta: { style } };
+        }
         let notes = closeVoicing(root, item);
         if (o.inv) notes = invert(notes, o.invN != null ? o.invN % notes.length : rnd(0, notes.length - 1));
         if (o.low) notes = [root - 12].concat(notes);
@@ -513,6 +550,7 @@
       case 'chords': {
         const [lo, hi] = chordRange(o);
         o.root = rnd(lo, hi); if (o.inv) o.invN = rnd(0, 3);
+        if (o.vary && !o.fam) o.vstyle = o.vary === 1 || o.vary === true ? pick(VOICINGS) : o.vary;
         if (o.fam === 'inv') { o.root = rnd(52, 60); o.invQ = o.sev ? pick(['maj7', 'min7', 'dom7']) : pick(['maj', 'min']); }
         break;
       }
@@ -626,6 +664,6 @@
 
   window.PTMusic = {
     NAMES, NAME_OPTIONS, TRANSPOSE_OPTIONS, WHITE, BLACK, ALL12, INTERVALS, CHORDS, SCALES, ROMAN, PROGS, DESC,
-    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, FUNC_ITEMS, FAMILIES, OPEN, OPENV, OPENV_FAM, INV, shapeOf, famOf, familyItems, chordTag, chordPcs, scaleSpelling, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
+    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, FUNC_ITEMS, FAMILIES, OPEN, OPENV, OPENV_FAM, INV, shapeOf, famOf, familyItems, chordTag, chordPcs, voiceChord, VOICINGS, scaleSpelling, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
   };
 })();

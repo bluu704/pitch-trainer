@@ -326,7 +326,8 @@
         { t: 'Pretty Shapes', d: 'Cmaj7, Fmaj7, Am7, Em7, Dm7.', p: OPENJ.concat(['open-C', 'open-Am']), slides: 'open' },
         { t: 'Sus & Add Shapes', d: 'Asus2, Asus4, Dsus2, Dsus4, Esus4, Cadd9.', p: OPENS.concat(['open-A', 'open-D']), slides: 'open' },
         { t: 'Barre Chords', d: 'F and Bm join the open chords.', p: OPENB.concat(OPEN5, OPENM), slides: 'open' },
-        { t: 'Every Open Chord', d: 'All 27 shapes.', p: OPENALL },
+        { t: 'Every Open Chord', d: 'All 27 chords.', p: OPENALL },
+        { t: 'Open Chords, Any Voicing', d: 'The same chords, stacked a new way every time.', p: OPEN5.concat(OPENM, ['open-E7', 'open-A7', 'open-Cmaj7', 'open-Asus2']), o: { vary: 1 }, slides: 'vary' },
         { t: 'Open Guitar Chords', d: 'Checkpoint: open chords by ear.', p: OPENALL }
       ] },
       { t: 'More Chord Colors', d: 'Power chords, sus2(add13), m7(add11), 7(♭13) and more.', nu: 1, L: [
@@ -342,12 +343,23 @@
         { t: 'Minor Diamond', d: 'The minor version: f-f+2-f+2-f-0-0.', p: OVEM, slides: 'openv' },
         { t: 'Slash Shape', d: 'Drop the 6th string and the 5th becomes the bass.', p: OVINV, slides: 'openv' },
         { t: 'One Shape, Many Chords', d: 'Every shape, every fret.', p: OVALL },
+        { t: 'Shapes, Any Voicing', d: 'The same chords, voiced a new way each time.', p: OVALL, o: { vary: 1 }, slides: 'vary' },
         { t: 'Open-String Shapes', d: 'Checkpoint: open-string shapes by ear.', p: OVALL }
+      ] },
+      { t: 'Voicings', d: 'The same chord, stacked many different ways.', nu: 1, L: [
+        { t: 'Spread Triads', d: 'Triads spread over two octaves.', p: TRI, o: { vary: 'spread' }, slides: 'vary' },
+        { t: 'Drop-2 Sevenths', d: 'Jazz-style open 7th chords.', p: SEV, o: { vary: 'drop2' } },
+        { t: 'Drop-3 Sevenths', d: 'Wider still: the guitar jazz voicing.', p: SEV, o: { vary: 'drop3' } },
+        { t: 'Any Voicing: Triads & 7ths', d: 'Close, inverted, drop-2, drop-3, or spread.', p: TRI.concat(SEV), o: { vary: 1 } },
+        { t: 'Any Voicing: Colors', d: 'Sus, sixths, and added tones, any voicing.', p: SUS6.concat(ADD), o: { vary: 1 } },
+        { t: 'Any Voicing: Extended', d: 'Ninths, elevenths, thirteenths, any voicing.', p: NINE.concat(ELEV, ['maj7', 'dom7']), o: { vary: 1 } },
+        { t: 'Any Voicing: Altered', d: 'Altered dominants, any voicing.', p: ALT.concat(['dom7']), o: { vary: 1 } },
+        { t: 'Voicings', d: 'Checkpoint: any chord, any voicing.', p: TRI.concat(SEV, SUS6, NINE), o: { vary: 1, wide: 1 } }
       ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
-        { t: 'Harmonic Mastery', d: 'All chords. All octaves. Pass it to skip everything before it.', p: ALLC, o: { inv: 1 } }
+        { t: 'Harmonic Mastery', d: 'All chords. All octaves. Any voicing. Pass it to skip everything before it.', p: ALLC, o: { vary: 1 } }
       ] }
     ],
     scales: [
