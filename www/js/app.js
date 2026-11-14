@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.5';
+  const VERSION = '1.3.0';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -148,7 +148,7 @@
     L.forEach((l) => { if (isDone(l)) o = Object.assign({}, o, l.o); });
     if (sk === 'pitch') { const oc = new Set(); L.forEach((l) => { if (isDone(l)) (l.o.oct || [4]).forEach((x) => oc.add(x)); }); o.oct = oc.size ? Array.from(oc) : [4]; }
     if (sk === 'intervals' && !o.dir) o.dir = 'up';
-    delete o.arp; delete o.seq; delete o.inst; delete o.only; delete o.func; delete o.reset;
+    delete o.arp; delete o.seq; delete o.inst; delete o.only; delete o.func; delete o.reset; delete o.fam; delete o.sev; delete o.chordRoot; delete o.together;
     return o;
   }
   const ENDLESS_ALL = { pitch: { oct: [3, 4, 5] }, intervals: { dir: 'any', wide: 1 }, chords: { inv: 1, wide: 1 }, scales: { randomRoot: 1, desc: 1 }, progs: { randomKey: 1, voice: 1 } };
@@ -392,12 +392,16 @@
       case 'pitch': { const d = Math.abs(a - b) % 12; return Math.min(d, 12 - d); }
       case 'intervals': return Math.abs(a - b);
       case 'chords': {
-        const x = M.CHORDS[a].iv, y = M.CHORDS[b].iv;
-        let diff = Math.abs(x.length - y.length) * 1.5;
-        for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) diff++;
+        if (M.INV[a] || M.INV[b]) return Math.abs((+String(a).slice(3) || 0) - (+String(b).slice(3) || 0));
+        const x = new Set(M.chordPcs(a)), y = new Set(M.chordPcs(b));
+        let diff = 0; x.forEach((v) => { if (!y.has(v)) diff++; }); y.forEach((v) => { if (!x.has(v)) diff++; });
         return diff;
       }
-      case 'scales': return Math.abs(SCALE_ORDER.indexOf(a) - SCALE_ORDER.indexOf(b));
+      case 'scales': {
+        const x = new Set(M.SCALES[a].iv.map((v) => v % 12)), y = new Set(M.SCALES[b].iv.map((v) => v % 12));
+        let diff = 0; x.forEach((v) => { if (!y.has(v)) diff++; }); y.forEach((v) => { if (!x.has(v)) diff++; });
+        return diff;
+      }
       case 'progs': {
         if (!M.PROGS[a] || !M.PROGS[b]) { const ra = M.ROMAN[a], rb = M.ROMAN[b]; return ra && rb ? Math.min(Math.abs(ra[0] - rb[0]), 12 - Math.abs(ra[0] - rb[0])) / 2 + (ra[1] === rb[1] ? 0 : 0.5) : 3; }
         const x = M.PROGS[a].chords, y = M.PROGS[b].chords;
@@ -410,7 +414,7 @@
   }
   function distractors(sk, target, pool, n, hard) {
     let c = pool.filter((x) => x !== target);
-    const fam = sk === 'progs' && !M.PROGS[target] ? M.FUNC_ITEMS : M.ALL_ITEMS[sk];
+    const fam = M.familyItems(sk, null, target);
     if (c.length < n) c = c.concat(shuffle(fam.filter((x) => x !== target && !c.includes(x))).slice(0, n - c.length));
     if (hard) c = c.map((x) => [x, closeness(sk, target, x) + Math.random() * 0.9]).sort((p, q) => p[1] - q[1]).map((p) => p[0]);
     else c = shuffle(c);
@@ -440,8 +444,8 @@
   function makeQuestion(sk, pool, o, ctx) {
     const hard = ctx.hard;
     const small = pool.length === 1;
-    const allowFind = (sk === 'pitch' || sk === 'intervals' || sk === 'chords') && !o.func;
-    const allowOdd = sk !== 'progs' && !o.func;
+    const allowFind = (sk === 'pitch' || sk === 'intervals' || sk === 'chords') && !o.func && !o.chordRoot && !o.together;
+    const allowOdd = sk !== 'progs' && !o.func && !o.fam && !o.chordRoot && !o.together;
     let kind;
     const r = Math.random();
     if (ctx.only) kind = ctx.only;
@@ -460,7 +464,8 @@
     do {
       if (kind === 'seq') {
         const n = o.seq || 2; target = [];
-        for (let i = 0; i < n; i++) target.push(weightedPick(sk, pool, target.slice(-1), ctx.newItems || []));
+        for (let i = 0; i < n; i++) target.push(weightedPick(sk, pool, o.together ? target : target.slice(-1), ctx.newItems || []));
+        if (o.together) target.sort((a, b) => a - b); // played at once: answer low to high
       } else target = weightedPick(sk, pool, ctx.recent, ctx.newItems || []);
       oc = M.concrete(sk, o);
       tries++;
@@ -470,6 +475,10 @@
     const inst = A.resolveInstrument(o.inst || S.settings.instrument);
     const q = { sk, kind, target, o: oc, inst, reset: sk === 'pitch' && (S.settings.resetEar || o.reset) };
     if (o.func) q.ask = 'Home first, then which chord?';
+    if (o.fam === 'open') q.ask = 'Which open chord is this?';
+    if (o.fam === 'openv') q.ask = 'Which chord does this shape make?';
+    if (o.fam === 'inv') q.ask = 'Which inversion is this?';
+    if (o.chordRoot) q.ask = 'What is the root of this chord?';
     q.sound = kind === 'seq' ? M.seqInstance(sk, target, oc) : M.instance(sk, target, oc);
     if (kind === 'odd') {
       // two of one item, one of another; each in its own register so only the quality gives it away
@@ -484,8 +493,16 @@
       if (sk === 'pitch') { const tw = q.options.filter((x, i) => i !== q.oddIdx); if (tw[0].sound.steps[0].notes[0] === tw[1].sound.steps[0].notes[0]) tw[1].sound = { steps: [{ t: 0, notes: [tw[0].sound.steps[0].notes[0] + (tw[0].sound.steps[0].notes[0] >= 72 ? -12 : 12)], d: 1.5 }] }; }
       q.odd = other;
     }
-    const fam = sk === 'progs' && o.func ? M.FUNC_ITEMS : M.ALL_ITEMS[sk];
-    if (kind === 'identify' || kind === 'seq') q.choices = fam.filter((x) => pool.includes(x));
+    const fam = M.familyItems(sk, o);
+    if (kind === 'identify' || kind === 'seq') {
+      q.choices = fam.filter((x) => pool.includes(x));
+      // never more than 12 answers: keep the right one and the closest look-alikes
+      if (q.choices.length > 12) {
+        const must = kind === 'seq' ? [...new Set(target)] : [target];
+        const keep = new Set(must.concat(distractors(sk, must[0], pool.filter((x) => !must.includes(x)).concat(must[0]), 12 - must.length, true)));
+        q.choices = q.choices.filter((x) => keep.has(x));
+      }
+    }
     if (kind === 'yesno') setYN(q, target, pool, Math.random() < 0.5, hard);
     if (kind === 'find') {
       const opts = shuffle([target].concat(distractors(sk, target, pool, 3, hard)));
@@ -523,7 +540,7 @@
       qc.forEach((q, i) => setYN(q, l.n[i % l.n.length], l.pool, ans[i], i > 0));
       qc.forEach((q) => steps.push({ type: 'q', q, phase: 'quick' }));
     } else if (mode === 'lesson' && l.slides) {
-      typeSlides(l.slides, sk).forEach((s) => steps.push({ type: 'slide', s }));
+      typeSlides(l.slides, sk, l).forEach((s) => steps.push({ type: 'slide', s }));
     }
     const count = mode === 'testout' ? (l.kind === 'final' ? l.q : 15) : l.q;
     makeQuiz(sk, l.pool, l.o, count, { newItems: l.n, hard: mode === 'testout' || l.kind !== 'learn' }).forEach((q) => steps.push({ type: 'q', q, phase: 'quiz' }));
@@ -596,13 +613,29 @@
     scales: ['What is scale detection?', 'A scale is a ladder of notes. Each one has its own flavor, from bright Lydian to dark Phrygian.', ['Eight notes, one {flavor}.', 'Start with the {major} scale.', 'Grow to all 11 scales, any key.']],
     progs: ['What are progressions?', 'Songs move through chords in patterns. Recognize the pattern and you can play along by ear.', ['Four chords, one {pattern}.', 'Start with the classic {I-IV-V-I}.', 'Grow to all nine, any key.']]
   };
-  function typeSlides(kind, sk) {
+  function shapeList(pool) {
+    return `<div class="list">${pool.map((id) => `<button class="lrow" ${hearBtn('chords', id, { inst: 'guitar' })}><div class="nm"><b>${esc(M.shortLabel('chords', id))}</b><small>${M.OPENV[id] ? esc(M.OPENV_FAM[M.OPENV[id][3]]) : 'open chord'}</small></div><div class="vis"><span class="tab">${esc(M.shapeOf(id))}</span></div><span class="tri"></span></button>`).join('')}</div>`;
+  }
+  function typeSlides(kind, sk, l) {
+    const pool = (l && l.pool) || [];
+    if (kind === 'open' || kind === 'openv') {
+      const intro = kind === 'open'
+        ? ['Open guitar chords', 'These are the first chords every guitarist learns. Each one rings with open strings, so each has its own sound you can learn to recognize.', ['Shapes read {low E to high E}: x = not played, 0 = open string.', 'Listen for the {bass note} and the {color}: major, minor, 7th, sus.', 'Played on guitar, strummed low to high.']]
+        : ['One shape, many chords', 'Keep the 1st and 2nd strings (E and B) open and slide one left-hand shape along the neck. You only fret the root and 5th; the open strings add the 3rds, 7ths, and tensions.', ['The same shape makes {Cmaj7} at fret 3, {Dsus2(add13)} at fret 5, and {G6} at fret 10.', 'The {diamond} shape from the 6th string adds a 3rd: E, Aadd9, Cmaj7, D6/9 and more.', 'Drop the 6th string and the 5th becomes the bass: slash chords like {G6/D}.']];
+      return [
+        { title: intro[0], lead: intro[1], html: li(intro[2]), tag: 'Learn · 1 of 2' },
+        { title: 'The shapes in this lesson', lead: 'Tap any shape to hear it.', html: shapeList(pool), tag: 'Learn · 2 of 2' }
+      ];
+    }
     const T = {
       seq: sk === 'pitch' ? ['Name the melody', 'Now you will hear a short tune of two or three notes. Tap the notes in the order you hear them.', ['Listen to the {whole tune} first.', 'Tap each note {in order}. Use undo if you slip.', 'Tap the wave to hear the tune again.']]
         : sk === 'intervals' ? ['Interval chains', 'You will hear three notes in a row. That makes two intervals. Name both, in order.', ['First interval: note 1 to note 2.', 'Second interval: note 2 to note 3.', 'Tap them {in order}. Use undo if you slip.']]
           : ['Chord chains', 'You will hear two chords in a row, each on its own root. Name both qualities, in order.', ['Listen for the {color} of each chord.', 'The roots change, so ignore how high they are.', 'Tap them {in order}. Use undo if you slip.']],
       odd: ['Odd one out', 'You will get three sounds. Two of them are the same kind, played in different places. One is different.', ['Tap {1}, {2}, and {3} to listen.', 'Ignore how high or low they are.', 'Pick the {one that doesn\'t belong}, then submit.']],
-      func: ['Chord functions', 'Every key has a home chord, I. Each other chord pulls away from home in its own way.', ['First you hear {home} (I).', 'Then one more chord: {ii, iii, IV, V, or vi}.', 'Name it by how it feels next to home.']]
+      func: ['Chord functions', 'Every key has a home chord, I. Each other chord pulls away from home in its own way.', ['First you hear {home} (I).', 'Then one more chord, like {IV, V, vi}, or a borrowed {iv, ♭VII, ♭VI}.', 'Name it by how it feels next to home.']],
+      dyad: ['Two at once', 'Now two notes sound together. Pick out both of them.', ['Listen for the {lower} note, then the {upper} one.', 'Tap them {low to high}. Use undo if you slip.', 'Hum each note separately if it helps.']],
+      root: ['Chord roots', 'A chord is built on one note, its root. Here the root is also in the bass.', ['Listen to the {lowest note} of the chord.', 'Name that note, just like a single note.', 'Major or minor does not matter, only the root.']],
+      inv: ['Inversions', 'The same chord can be stacked with a different note on the bottom. That bottom note changes the color.', ['{Root position}: the root is on the bottom. Solid and settled.', '{1st inversion}: the 3rd on the bottom. Lighter and moving.', '{2nd inversion}: the 5th on the bottom. Open and unstable. 7th chords add a {3rd inversion} with the 7th on the bottom.']]
     }[kind];
     const s = [{ title: T[0], lead: T[1], html: li(T[2]), tag: 'Learn · 1 of 1' }];
     if (kind === 'func') {
@@ -676,10 +709,11 @@
       let nm = '', vis = '';
       if (sk === 'intervals') {
         nm = `<b>${M.INTERVALS[x][0]}</b><small>${M.INTERVALS[x][1]}</small>`;
-        vis = `<div class="ibar"><i style="width:${(x / 12) * 100}%"></i><em>${x}</em></div>`;
+        vis = `<div class="ibar"><i style="width:${(x / Math.max(12, ...items)) * 100}%"></i><em>${x}</em></div>`;
       } else if (sk === 'chords') {
+        const span = Math.max(12, ...items.map((y) => Math.max(...M.CHORDS[y].iv)));
         nm = `<b>${M.CHORDS[x].name}</b><small>${M.CHORDS[x].kind}</small>`;
-        vis = `<div class="dline"></div>${M.CHORDS[x].iv.map((v) => `<span class="dd" style="left:${4 + (v / 12) * 92}%"></span>`).join('')}`;
+        vis = `<div class="dline"></div>${M.CHORDS[x].iv.map((v) => `<span class="dd" style="left:${4 + (v / span) * 92}%"></span>`).join('')}`;
       } else if (sk === 'scales') {
         const sc = M.SCALES[x];
         nm = `<b>${sc.name}</b>`;
@@ -743,7 +777,7 @@
         foot = `<button class="btn" data-act="submit" ${L.sel == null ? 'disabled' : ''}>Submit</button>`;
       } else if (q.kind === 'seq') {
         L.seqPicks = L.seqPicks || [];
-        body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}<div class="qtitle">Name the ${q.target.length} ${({ pitch: 'notes', intervals: 'intervals', chords: 'chords' })[q.sk] || 'sounds'} in order</div></div>
+        body = `<div class="qtop">${tag ? `<div class="qtag">${tag}</div>` : ''}<div class="qtitle">${q.o.together ? `Name the ${q.target.length} notes, low to high` : `Name the ${q.target.length} ${({ pitch: 'notes', intervals: 'intervals', chords: 'chords' })[q.sk] || 'sounds'} in order`}</div></div>
           <canvas class="wave" data-act="replay"></canvas>
           <div class="slots">${q.target.map((_, i) => `<span class="slot ${L.seqPicks[i] != null ? 'fill' : ''}">${L.seqPicks[i] != null ? esc(slbl(q.sk, L.seqPicks[i])) : i + 1}</span>`).join('')}<button class="iconbtn" data-act="undo" title="Undo">${I.undo}</button></div>
           ${choicesHTML(q, false)}`;
@@ -765,7 +799,7 @@
     if (sk === 'pitch' && S.settings.keyboard) return keyboardHTML(q.choices, practice);
     const n = q.choices.length;
     const g = q.o && q.o.func ? (n <= 2 ? 'g2' : 'g3') : sk === 'scales' || sk === 'progs' ? 'g2' : sk === 'chords' ? (n <= 4 ? 'g2' : 'g3') : n === 2 ? 'g2' : n === 3 ? 'g3' : n <= 4 ? 'g2' : '';
-    return `<div class="grid ${g}">${q.choices.map((c, i) => `<button class="ch-b" data-act="pick" data-k="${POS_KEYS[i] || ''}" ${sk === 'pitch' ? `data-kl="${noteKey(practice ? (c + (12 - S.settings.transpose) % 12) % 12 : c)}"` : ''} data-it="${esc(JSON.stringify(c))}">${esc(sk === 'pitch' ? lbl(sk, c, practice) : M.shortLabel(sk, c))}${sk === 'chords' ? `<small>${M.CHORDS[c].kind === 'triad' ? 'triad' : '7th'}</small>` : ''}</button>`).join('')}</div>`;
+    return `<div class="grid ${g}">${q.choices.map((c, i) => `<button class="ch-b" data-act="pick" data-k="${POS_KEYS[i] || ''}" ${sk === 'pitch' ? `data-kl="${noteKey(practice ? (c + (12 - S.settings.transpose) % 12) % 12 : c)}"` : ''} data-it="${esc(JSON.stringify(c))}">${esc(sk === 'pitch' ? lbl(sk, c, practice) : M.shortLabel(sk, c))}${sk === 'chords' ? `<small>${esc(M.chordTag(c))}</small>` : ''}</button>`).join('')}</div>`;
   }
   const NAT = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' };
   const usesFlats = () => S.settings.names === 'flat' || S.settings.names === 'solFlat';
@@ -844,7 +878,7 @@
     const yours = compareItem(q, picked);
     const yLabel = yours == null ? '' : q.kind === 'seq' ? 'Yours' : q.kind === 'yesno' ? nm(yours) : 'Yours: ' + nm(yours);
     const cmp = !ok && yours != null ? `<div class="cmp"><button data-act="cmp" data-w="you">${I.play} ${yLabel}</button><button data-act="cmp" data-w="ans">${I.play} Answer${q.kind === 'seq' ? '' : ': ' + nm(q.target)}</button></div>` : '';
-    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${scaleFeedback(q)}${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
+    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${scaleFeedback(q)}${shapeFeedback(q)}${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
     lesson.appendChild(fb);
     // keep the marked answers visible above the feedback panel
     const lb = lesson.querySelector('.lbody'), ft = lesson.querySelector('.lfoot');
@@ -863,6 +897,10 @@
     return `<div class="fb-spell"><div class="fs-h">${q.kind === 'odd' ? 'The odd one: ' : 'You heard: '}<b>${esc(M.SCALES[item].name)} on ${esc(sp.root)}</b>${down ? ' · played downward' : ''}</div>
       <div class="sp-notes">${sp.notes.map((n) => `<span class="sp-n ${n.out ? 'out' : ''}">${esc(n.name)}</span>`).join('')}</div>
       <div class="sp-sig"><b>Key signature:</b> ${esc(sig)}, like ${esc(sp.sigMajor)} major${sp.notes.some((n) => n.out) ? '. Highlighted notes are outside it.' : '.'}</div></div>`;
+  }
+  function shapeFeedback(q) {
+    if (q.sk !== 'chords' || !(q.o.fam === 'open' || q.o.fam === 'openv') || q.kind !== 'identify' && q.kind !== 'yesno') return '';
+    return `<div class="fb-spell"><div class="fs-h">You heard: <b>${esc(M.shortLabel('chords', q.target))}</b></div><div class="sp-sig"><b>Shape:</b> <span class="tab">${esc(M.shapeOf(q.target))}</span> (low E to high E)</div></div>`;
   }
   function soundFor(q, item) { return q.kind === 'seq' ? M.seqInstance(q.sk, item, q.o) : M.instance(q.sk, item, q.o); }
   function compareItem(q, picked) {

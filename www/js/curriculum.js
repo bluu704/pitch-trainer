@@ -11,6 +11,22 @@
   const MAJP = ['I-IV-V-I', 'I-IV-I-V', 'I-V-vi-IV', 'I-vi-IV-V', 'I-iii-IV-V'];
   const MINP = ['vi-IV-I-V', 'i-VI-III-VII', 'i-iv-i-V'];
   const ALLP = MAJP.concat(MINP, ['ii-V-I']);
+  const I24 = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
+  const SUS6 = ['sus2', 'sus4', '7sus4', 'maj6', 'm6'], ADD = ['add9', 'madd9', 'add11', 'add13', 'six9'];
+  const NINE = ['dom9', 'maj9', 'm9'], ELEV = ['dom11', 'm11', 'dom13', 'maj13'], ALT = ['7b9', '7s9', '7s5', '7b5', '7s11', 'mmaj7', 'maj7s11'];
+  const OPEN5 = ['open-C', 'open-A', 'open-G', 'open-E', 'open-D'], OPENM = ['open-Am', 'open-Em', 'open-Dm'];
+  const OPEN7 = ['open-E7', 'open-A7', 'open-D7', 'open-G7', 'open-C7', 'open-B7'], OPENJ = ['open-Cmaj7', 'open-Fmaj7', 'open-Am7', 'open-Em7', 'open-Dm7'];
+  const OPENS = ['open-Asus2', 'open-Asus4', 'open-Dsus2', 'open-Dsus4', 'open-Esus4', 'open-Cadd9'], OPENB = ['open-F', 'open-Bm'];
+  const OPENALL = OPEN5.concat(OPENM, OPEN7, OPENJ, OPENS, OPENB);
+  const COLORS = ['five', 'sus2a13', 'sus2a11', 'madd11', 'm7add11', 'dom7add11', 'maj7a13', 'dom7b13', 'm7b13'];
+  // open-string voicings by shape family; mixed pools keep one shape per chord name
+  const OV = window.PTMusic.OPENV;
+  const ovFam = (f) => Object.keys(OV).filter((k) => OV[k][3] === f);
+  const ovUnique = (ids) => { const seen = new Set(); return ids.filter((k) => !seen.has(OV[k][0]) && seen.add(OV[k][0])); };
+  const OVA5 = ovFam('a5'), OVE = ovFam('e6M'), OVEM = ovFam('e6m'), OVINV = ovFam('inv');
+  const OVALL = ovUnique(OVA5.concat(OVE, OVEM, OVINV));
+  const EXOTIC = ['phrygdom', 'hungmin', 'dblharm'], JAZZ = ['lyddom', 'altered', 'bebop', 'locrian'], SYM = ['wholetone', 'dimhw', 'dimwh'], WORLD = ['majblues', 'hirajoshi', 'insen'];
+  const POPP = ['I-IV-vi-V', 'I-vi-ii-V', 'IV-V-iii-vi', 'I-♭VII-IV-I'], BORP = ['I-♭VI-♭VII-I', 'i-♭VII-♭VI-V', 'I7-IV7-I7-V7'], JAZP = ['ii7-V7-Imaj7', 'iiø7-V7-i', 'I-vi-ii-V'];
 
   const DATA = {
     pitch: [
@@ -84,6 +100,19 @@
         { t: 'White-Key Twins', d: 'White keys across octaves.', p: W },
         { t: 'Chromatic Twins', d: 'All 12 across octaves.', p: A12 },
         { t: 'Odd One Out', d: 'Checkpoint: spot the different note.', p: A12 }
+      ] },
+      { t: 'Two at Once', d: 'Two notes played together. Name both, low to high.', nu: 1, o: { oct: [4], seq: 2, together: 1 }, L: [
+        { t: 'Wide Pairs', d: 'C, E, and G in pairs.', p: [0, 4, 7], slides: 'dyad' },
+        { t: 'White Pairs', d: 'Any two white keys.', p: W },
+        { t: 'Close Pairs', d: 'Neighbors and near neighbors.', p: [0, 1, 2, 3, 4, 5] },
+        { t: 'Any Pair', d: 'Any two of the 12 notes.', p: A12 },
+        { t: 'Two at Once', d: 'Checkpoint: name both notes.', p: A12 }
+      ] },
+      { t: 'Chord Roots', d: 'Hear a chord and name its root note.', nu: 1, o: { oct: [3, 4], chordRoot: 1 }, L: [
+        { t: 'Roots in C Major', d: 'Chords built on the white keys.', p: [0, 2, 4, 5, 7, 9], slides: 'root' },
+        { t: 'Black-Key Roots', d: 'Chords on the black keys.', p: [0, 1, 3, 6, 8, 10] },
+        { t: 'Any Root', d: 'Chords on all 12 roots.', p: A12 },
+        { t: 'Chord Roots', d: 'Checkpoint: name the root.', p: A12 }
       ] },
       { t: 'Absolute Pitch', d: '12 Notes. 3 Octaves. Random. No Mercy.', o: { oct: [3, 4, 5], inst: 'random' }, L: [
         { t: 'Random Timbres', d: 'Every note on every instrument.', p: A12 },
@@ -177,6 +206,15 @@
         { t: 'Odd Anything', d: 'Every interval.', p: I12, o: { dir: 'any' } },
         { t: 'Odd Interval Out', d: 'Checkpoint: spot the different interval.', p: I12, o: { dir: 'any', wide: 1 } }
       ] },
+      { t: 'Compound Intervals', d: 'Beyond the octave: 9ths to two octaves.', nu: 1, o: { dir: 'up' }, L: [
+        { t: 'Ninths', d: 'Meet the minor and major 9th.', n: [13, 14], p: [12, 13, 14] },
+        { t: 'Tenths', d: 'Meet the minor and major 10th.', n: [15, 16], p: [12, 13, 14, 15, 16] },
+        { t: 'Elevenths & Twelfths', d: 'Meet the 11ths and the 12th.', n: [17, 18, 19], p: [12, 14, 16, 17, 18, 19] },
+        { t: 'Thirteenths & Beyond', d: 'Meet the 13ths, 14ths, and two octaves.', n: [20, 21, 22, 23, 24], p: [19, 20, 21, 22, 23, 24] },
+        { t: 'Compound Mix', d: 'Every compound interval, up or down.', p: I24, o: { dir: 'both' } },
+        { t: 'Compound Together', d: 'Compound intervals played at once.', p: I24, o: { dir: 'harm' } },
+        { t: 'Compound Intervals', d: 'Checkpoint: compound intervals.', p: I24, o: { dir: 'any' } }
+      ] },
       { t: 'Final Exam: Absolute Mastery', d: 'Any interval. Any octave. Either direction.', o: { dir: 'any', wide: 1 }, L: [
         { t: 'Absolute Mastery', d: 'Any interval. Any octave. Either direction. Pass it to skip everything before it.', p: I12 }
       ] }
@@ -242,6 +280,70 @@
         { t: '7th Chains', d: 'Two 7th chords in a row.', p: SEV },
         { t: 'Chord Chains', d: 'Checkpoint: any two chords.', p: ALLC, o: { inv: 1 } }
       ] },
+      { t: 'Suspended & Sixths', d: 'Sus2, sus4, 7sus4, 6, m6.', nu: 1, L: [
+        { t: 'Suspended', d: 'Meet sus2 and sus4.', n: ['sus2', 'sus4'], p: ['maj', 'min', 'sus2', 'sus4'] },
+        { t: 'Hanging Dominant', d: 'Meet 7sus4.', n: ['7sus4'], p: ['sus4', '7sus4', 'dom7'] },
+        { t: 'Sixths', d: 'Meet the major and minor 6th.', n: ['maj6', 'm6'], p: ['maj', 'min', 'maj6', 'm6', 'maj7'] },
+        { t: 'Sus & Six Mix', d: 'All five, with triads.', p: SUS6.concat(['maj', 'min']) },
+        { t: 'Suspended & Sixths', d: 'Checkpoint: sus and sixth chords.', p: SUS6, o: { wide: 1 } }
+      ] },
+      { t: 'Added Tones', d: 'Add9, m(add9), add11, add13, 6/9.', nu: 1, L: [
+        { t: 'Add Nine', d: 'Meet add9 and minor add9.', n: ['add9', 'madd9'], p: ['maj', 'min', 'add9', 'madd9'] },
+        { t: 'Add Eleven & Thirteen', d: 'Meet add11 and add13.', n: ['add11', 'add13'], p: ['add9', 'add11', 'add13', 'maj6'] },
+        { t: 'Six-Nine', d: 'Meet the 6/9 chord.', n: ['six9'], p: ['maj6', 'add9', 'six9', 'maj7'] },
+        { t: 'Added Tones', d: 'Checkpoint: added-tone chords.', p: ADD.concat(['maj6']) }
+      ] },
+      { t: 'Ninths', d: 'Dominant 9, major 9, minor 9.', nu: 1, L: [
+        { t: 'Dominant Ninth', d: 'Meet the dominant 9th.', n: ['dom9'], p: ['dom7', 'dom9', 'add9'] },
+        { t: 'Major & Minor Ninths', d: 'Meet maj9 and m9.', n: ['maj9', 'm9'], p: ['maj7', 'min7', 'maj9', 'm9', 'dom9'] },
+        { t: 'Ninths Compared', d: 'All three 9ths with their 7ths.', p: NINE.concat(['maj7', 'min7', 'dom7']), o: { inv: 1 } },
+        { t: 'Ninths', d: 'Checkpoint: ninth chords.', p: NINE.concat(['add9', 'madd9']) }
+      ] },
+      { t: 'Elevens & Thirteens', d: '11, m11, 13, maj13.', nu: 1, L: [
+        { t: 'Elevenths', d: 'Meet the dominant and minor 11th.', n: ['dom11', 'm11'], p: ['dom9', 'm9', 'dom11', 'm11'] },
+        { t: 'Thirteenths', d: 'Meet the dominant and major 13th.', n: ['dom13', 'maj13'], p: ['dom9', 'maj9', 'dom13', 'maj13', 'add13'] },
+        { t: 'Big Chord Mix', d: 'All the extended chords so far.', p: NINE.concat(ELEV) },
+        { t: 'Elevens & Thirteens', d: 'Checkpoint: extended chords.', p: ELEV.concat(NINE) }
+      ] },
+      { t: 'Altered Dominants', d: '7♭9, 7♯9, 7♯5, 7♭5, 7♯11 and more.', nu: 1, L: [
+        { t: 'Flat & Sharp Nine', d: 'Meet 7♭9 and 7♯9.', n: ['7b9', '7s9'], p: ['dom7', 'dom9', '7b9', '7s9'] },
+        { t: 'Bent Fifths', d: 'Meet 7♯5 and 7♭5.', n: ['7s5', '7b5'], p: ['dom7', 'aug', '7s5', '7b5'] },
+        { t: 'Lydian Colors', d: 'Meet 7♯11 and maj7♯11.', n: ['7s11', 'maj7s11'], p: ['dom7', 'maj7', '7s11', 'maj7s11'] },
+        { t: 'Minor-Major', d: 'Meet the minor-major 7th.', n: ['mmaj7'], p: ['min7', 'maj7', 'mmaj7', 'm6'] },
+        { t: 'Altered Mix', d: 'Every altered chord.', p: ALT.concat(['dom7']) },
+        { t: 'Altered Dominants', d: 'Checkpoint: altered chords.', p: ALT }
+      ] },
+      { t: 'Inversions by Ear', d: 'Root position, 1st, 2nd, and 3rd inversion.', nu: 1, o: { fam: 'inv' }, L: [
+        { t: 'Root or First?', d: 'Root position or 1st inversion.', p: ['inv0', 'inv1'], slides: 'inv' },
+        { t: 'Three Positions', d: 'Root, 1st, and 2nd inversion.', p: ['inv0', 'inv1', 'inv2'] },
+        { t: 'Seventh Inversions', d: '7th chords add a 3rd inversion.', p: ['inv0', 'inv1', 'inv2', 'inv3'], o: { sev: 1 } },
+        { t: 'Inversions by Ear', d: 'Checkpoint: name the inversion.', p: ['inv0', 'inv1', 'inv2', 'inv3'], o: { sev: 1 } }
+      ] },
+      { t: 'Open Guitar Chords', d: 'The open chords every guitarist knows, by ear.', nu: 1, o: { fam: 'open', inst: 'guitar' }, L: [
+        { t: 'The Big Five', d: 'C, A, G, E, D.', p: OPEN5, slides: 'open' },
+        { t: 'Minor Shapes', d: 'Am, Em, Dm with the big five.', p: OPEN5.concat(OPENM), slides: 'open' },
+        { t: 'Open Sevenths', d: 'E7, A7, D7, G7, C7, B7.', p: OPEN7.concat(['open-E', 'open-A']), slides: 'open' },
+        { t: 'Pretty Shapes', d: 'Cmaj7, Fmaj7, Am7, Em7, Dm7.', p: OPENJ.concat(['open-C', 'open-Am']), slides: 'open' },
+        { t: 'Sus & Add Shapes', d: 'Asus2, Asus4, Dsus2, Dsus4, Esus4, Cadd9.', p: OPENS.concat(['open-A', 'open-D']), slides: 'open' },
+        { t: 'Barre Chords', d: 'F and Bm join the open chords.', p: OPENB.concat(OPEN5, OPENM), slides: 'open' },
+        { t: 'Every Open Chord', d: 'All 27 shapes.', p: OPENALL },
+        { t: 'Open Guitar Chords', d: 'Checkpoint: open chords by ear.', p: OPENALL }
+      ] },
+      { t: 'More Chord Colors', d: 'Power chords, sus2(add13), m7(add11), 7(♭13) and more.', nu: 1, L: [
+        { t: 'Power & Open Sus', d: 'Meet the power chord, sus2(add13), and sus2(add11).', n: ['five', 'sus2a13', 'sus2a11'], p: ['five', 'sus2', 'sus2a13', 'sus2a11', 'sus4'] },
+        { t: 'Added Elevenths', d: 'Meet m(add11), m7(add11), and 7(add11).', n: ['madd11', 'm7add11', 'dom7add11'], p: ['add11', 'madd11', 'm7add11', 'dom7add11', 'm11'] },
+        { t: 'Thirteenth Colors', d: 'Meet maj7(add13), 7(♭13), and m7(♭13).', n: ['maj7a13', 'dom7b13', 'm7b13'], p: ['maj7a13', 'dom7b13', 'm7b13', 'dom13', 'maj6'] },
+        { t: 'Color Mix', d: 'All nine colors.', p: COLORS },
+        { t: 'More Chord Colors', d: 'Checkpoint: the new chord colors.', p: COLORS.concat(['add9', 'm9']) }
+      ] },
+      { t: 'Open-String Shapes', d: 'One left-hand shape slid along the neck, open B and E ringing.', nu: 1, o: { fam: 'openv', inst: 'guitar' }, L: [
+        { t: 'Fifth-String Shape', d: 'x-f-f+2-f+2-0-0: Asus2, Cmaj7, Dsus2(add13), G6 and more.', p: OVA5, slides: 'openv' },
+        { t: 'Diamond Shape', d: 'The four-finger diamond from the 6th string: f-f+2-f+2-f+1-0-0.', p: OVE, slides: 'openv' },
+        { t: 'Minor Diamond', d: 'The minor version: f-f+2-f+2-f-0-0.', p: OVEM, slides: 'openv' },
+        { t: 'Slash Shape', d: 'Drop the 6th string and the 5th becomes the bass.', p: OVINV, slides: 'openv' },
+        { t: 'One Shape, Many Chords', d: 'Every shape, every fret.', p: OVALL },
+        { t: 'Open-String Shapes', d: 'Checkpoint: open-string shapes by ear.', p: OVALL }
+      ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
@@ -300,6 +402,30 @@
         { t: 'Odd Foundation', d: 'Major and the three minors.', p: ['major', 'natmin', 'harmin', 'melmin'], slides: 'odd' },
         { t: 'Odd Modes', d: 'The six modes.', p: ['lydian', 'major', 'mixo', 'dorian', 'natmin', 'phrygian'] },
         { t: 'Odd Scale Out', d: 'Checkpoint: spot the different scale.', p: ALLS }
+      ] },
+      { t: 'Exotic Minors', d: 'Phrygian dominant, Hungarian minor, double harmonic.', nu: 1, o: { randomRoot: 1 }, L: [
+        { t: 'Phrygian Dominant', d: 'Meet Phrygian dominant.', n: ['phrygdom'], p: ['phrygian', 'harmin', 'phrygdom'] },
+        { t: 'Hungarian Minor', d: 'Meet Hungarian minor.', n: ['hungmin'], p: ['harmin', 'phrygdom', 'hungmin'] },
+        { t: 'Double Harmonic', d: 'Meet the double harmonic scale.', n: ['dblharm'], p: EXOTIC.concat(['harmin']) },
+        { t: 'Exotic Minors', d: 'Checkpoint: exotic minors.', p: EXOTIC.concat(['harmin', 'phrygian']) }
+      ] },
+      { t: 'Jazz Scales', d: 'Lydian dominant, altered, bebop, Locrian.', nu: 1, o: { randomRoot: 1 }, L: [
+        { t: 'Lydian Dominant', d: 'Meet Lydian dominant.', n: ['lyddom'], p: ['lydian', 'mixo', 'lyddom'] },
+        { t: 'Locrian', d: 'Meet Locrian, the darkest mode.', n: ['locrian'], p: ['phrygian', 'locrian', 'natmin'] },
+        { t: 'Altered', d: 'Meet the altered scale.', n: ['altered'], p: ['locrian', 'altered', 'lyddom'] },
+        { t: 'Bebop Dominant', d: 'Meet the bebop dominant scale.', n: ['bebop'], p: ['mixo', 'bebop', 'lyddom'] },
+        { t: 'Jazz Scales', d: 'Checkpoint: jazz scales.', p: JAZZ.concat(['mixo']) }
+      ] },
+      { t: 'Symmetric Scales', d: 'Whole tone and the two diminished scales.', nu: 1, o: { randomRoot: 1 }, L: [
+        { t: 'Whole Tone', d: 'Meet the whole tone scale.', n: ['wholetone'], p: ['major', 'lydian', 'wholetone'] },
+        { t: 'Diminished Scales', d: 'Meet half-whole and whole-half.', n: ['dimhw', 'dimwh'], p: SYM },
+        { t: 'Symmetric Scales', d: 'Checkpoint: symmetric scales.', p: SYM.concat(['altered']) }
+      ] },
+      { t: 'World Scales', d: 'Major blues, Hirajoshi, In-sen.', nu: 1, o: { randomRoot: 1 }, L: [
+        { t: 'Major Blues', d: 'Meet the major blues scale.', n: ['majblues'], p: ['pentmaj', 'blues', 'majblues'] },
+        { t: 'Japanese Scales', d: 'Meet Hirajoshi and In-sen.', n: ['hirajoshi', 'insen'], p: ['pentmin', 'hirajoshi', 'insen'] },
+        { t: 'Five-Note World', d: 'Every five- and six-note scale.', p: ['pentmaj', 'pentmin', 'blues', 'majblues', 'hirajoshi', 'insen', 'wholetone'] },
+        { t: 'World Scales', d: 'Checkpoint: world scales.', p: WORLD.concat(['pentmaj', 'pentmin', 'blues']) }
       ] },
       { t: 'Final: Any Scale, Any Key', d: 'All 11 scales, random keys and octaves.', o: { randomRoot: 1, wide: 1 }, L: [
         { t: 'Random Keys', d: 'Every scale in random keys.', p: ALLS },
@@ -362,6 +488,35 @@
         { t: 'Add the Two', d: 'ii, IV, V, or vi.', p: ['ii', 'IV', 'V', 'vi'] },
         { t: 'All Five', d: 'ii, iii, IV, V, vi.', p: ['ii', 'iii', 'IV', 'V', 'vi'] },
         { t: 'Chord Functions', d: 'Checkpoint: every chord function, any key.', p: ['ii', 'iii', 'IV', 'V', 'vi'], o: { randomKey: 1 } }
+      ] },
+      { t: 'Pop & Rock Loops', d: 'Four more loops from the charts.', nu: 1, L: [
+        { t: 'The Bright Loop', d: 'Meet I-IV-vi-V.', n: ['I-IV-vi-V'], p: ['I-V-vi-IV', 'I-vi-IV-V', 'I-IV-vi-V'] },
+        { t: 'The Turnaround', d: 'Meet I-vi-ii-V.', n: ['I-vi-ii-V'], p: ['I-vi-IV-V', 'I-vi-ii-V', 'I-IV-vi-V'] },
+        { t: 'The Royal Road', d: 'Meet IV-V-iii-vi.', n: ['IV-V-iii-vi'], p: ['IV-V-iii-vi', 'vi-IV-I-V', 'I-IV-vi-V'] },
+        { t: 'Rock Flat Seven', d: 'Meet I-♭VII-IV-I.', n: ['I-♭VII-IV-I'], p: ['I-IV-V-I', 'I-♭VII-IV-I', 'I-IV-I-V'] },
+        { t: 'Pop & Rock Loops', d: 'Checkpoint: the new loops.', p: POPP.concat(['I-V-vi-IV']) }
+      ] },
+      { t: 'Borrowed Colors', d: 'Chords borrowed from the minor key, and the blues.', nu: 1, L: [
+        { t: 'The Epic Cadence', d: 'Meet I-♭VI-♭VII-I.', n: ['I-♭VI-♭VII-I'], p: ['I-♭VI-♭VII-I', 'I-♭VII-IV-I', 'I-IV-V-I'] },
+        { t: 'Andalusian', d: 'Meet i-♭VII-♭VI-V.', n: ['i-♭VII-♭VI-V'], p: ['i-♭VII-♭VI-V', 'i-VI-III-VII', 'i-iv-i-V'] },
+        { t: 'Blues Changes', d: 'Meet I7-IV7-I7-V7.', n: ['I7-IV7-I7-V7'], p: ['I7-IV7-I7-V7', 'I-IV-I-V', 'I-IV-V-I'] },
+        { t: 'Borrowed Colors', d: 'Checkpoint: borrowed chords.', p: BORP.concat(['I-♭VII-IV-I']), o: { randomKey: 1 } }
+      ] },
+      { t: 'Jazz Changes', d: 'Seventh chords and the minor ii-V-i.', nu: 1, o: { voice: 1 }, L: [
+        { t: 'ii-V-I with Sevenths', d: 'Meet ii7-V7-Imaj7.', n: ['ii7-V7-Imaj7'], p: ['ii-V-I', 'ii7-V7-Imaj7', 'I-vi-ii-V'] },
+        { t: 'Minor ii-V-i', d: 'Meet iiø7-V7-i.', n: ['iiø7-V7-i'], p: ['ii7-V7-Imaj7', 'iiø7-V7-i', 'i-iv-i-V'] },
+        { t: 'Jazz Changes', d: 'Checkpoint: jazz changes.', p: JAZP.concat(['ii-V-I']) }
+      ] },
+      { t: 'The Canon', d: 'An eight-chord loop.', nu: 1, L: [
+        { t: 'Meet the Canon', d: 'Meet I-V-vi-iii-IV-I-IV-V.', n: ['I-V-vi-iii-IV-I-IV-V'], p: ['I-V-vi-iii-IV-I-IV-V', 'I-V-vi-IV', 'I-vi-IV-V'] },
+        { t: 'Long and Short', d: 'The canon among the four-chord loops.', p: ['I-V-vi-iii-IV-I-IV-V', 'I-V-vi-IV', 'I-IV-vi-V', 'IV-V-iii-vi'] },
+        { t: 'The Canon', d: 'Checkpoint: the canon.', p: ['I-V-vi-iii-IV-I-IV-V', 'I-V-vi-IV', 'I-vi-IV-V', 'I-IV-vi-V'], o: { randomKey: 1 } }
+      ] },
+      { t: 'Borrowed Functions', d: 'Hear home, then name iv, ♭VII, ♭VI, or V7.', nu: 1, o: { func: 1 }, L: [
+        { t: 'Minor Four', d: 'IV or the borrowed iv.', p: ['IV', 'iv'], slides: 'func' },
+        { t: 'Flat Seven & Flat Six', d: '♭VII and ♭VI join IV and V.', p: ['IV', 'V', '♭VII', '♭VI'] },
+        { t: 'Dominant Seventh', d: 'V or V7, with IV and iv.', p: ['V', 'V7', 'IV', 'iv'] },
+        { t: 'Borrowed Functions', d: 'Checkpoint: every chord function, any key.', p: ['ii', 'iii', 'IV', 'iv', 'V', 'V7', 'vi', '♭VII', '♭VI'], o: { randomKey: 1 } }
       ] },
       { t: 'Final: Any Progression, Any Key', d: 'All nine, random keys, real voicings.', o: { voice: 1, randomKey: 1 }, L: [
         { t: 'Any Progression, Any Key', d: 'All nine, random keys, real voicings. Pass it to skip everything before it.', p: ALLP }
