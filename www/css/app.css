@@ -542,3 +542,7 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
 /* guitar shapes */
 .tab { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; font-weight: 700; letter-spacing: .5px; color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
 .lrow .vis .tab { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); }
+
+/* long answer names (e.g. 8-chord progressions) wrap inside their button instead of widening the grid */
+.grid > * { min-width: 0; }
+.ch-b { overflow-wrap: anywhere; }

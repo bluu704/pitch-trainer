@@ -466,7 +466,7 @@
         const n = o.seq || 2; target = [];
         for (let i = 0; i < n; i++) target.push(weightedPick(sk, pool, o.together ? target : target.slice(-1), ctx.newItems || []));
         if (o.together) target.sort((a, b) => a - b); // played at once: answer low to high
-      } else target = weightedPick(sk, pool, ctx.recent, ctx.newItems || []);
+      } else target = ctx.force != null ? ctx.force : weightedPick(sk, pool, ctx.recent, ctx.newItems || []);
       oc = M.concrete(sk, o);
       tries++;
     } while (ctx.seen.has(kind + sigOf(target, oc)) && tries < 8);
@@ -522,6 +522,7 @@
     for (let i = 0; i < count; i++) {
       ctx.hard = extra.hard || i >= count * 0.4;
       ctx.only = extra.only;
+      ctx.force = extra.force;
       out.push(makeQuestion(sk, pool, o, ctx));
     }
     return out;
@@ -851,13 +852,8 @@
       L.requeue++;
       const small = L.l.pool.length < 2, canFind = q.sk === 'pitch' || q.sk === 'intervals' || q.sk === 'chords';
       const retryKind = q.kind === 'seq' || q.kind === 'odd' ? q.kind : !small ? 'identify' : canFind ? 'find' : 'yesno';
-      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: retryKind, hard: true })[0];
-      const item = q.kind === 'yesno' ? q.asked : q.target;
-      if (retryKind === 'yesno') setYN(nq, item, L.l.pool, Math.random() < 0.5, true);
-      else if (q.kind !== 'seq' && q.kind !== 'odd' && L.l.pool.includes(item)) {
-        nq.target = item; nq.sound = M.instance(q.sk, item, nq.o);
-        if (nq.kind === 'find') nq.options = shuffle([item].concat(distractors(q.sk, item, L.l.pool, 3, true))).map((it) => ({ it, sound: M.instance(q.sk, it, nq.o) }));
-      }
+      const item0 = q.kind === 'yesno' ? q.asked : q.target;
+      const nq = makeQuiz(q.sk, L.l.pool, L.l.o, 1, { only: retryKind, hard: true, force: q.kind === 'seq' || q.kind === 'odd' || !L.l.pool.includes(item0) ? undefined : item0 })[0];
       L.steps.push({ type: 'q', q: nq, phase: 'quiz', retry: true });
     }
     const lesson = document.getElementById('lesson');
