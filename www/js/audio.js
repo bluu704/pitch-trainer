@@ -10,9 +10,12 @@
   const SAMPLE_INST = ['piano', 'guitar', 'cello', 'clarinet', 'trumpet'];
   const POINTS = []; for (let m = 24; m <= 96; m += 3) POINTS.push(m);
   // loudness matching (samples are peak-normalized per instrument)
-  const TRIM = { piano: 1.0, guitar: 1.05, cello: 0.5, clarinet: 0.36, trumpet: 0.62, sine: 0.42 };
+  const TRIM = { piano: 0.9, guitar: 0.95, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
   // how long the note rings after its nominal end
-  const REL = { piano: 0.35, guitar: 0.3, cello: 0.22, clarinet: 0.14, trumpet: 0.14 };
+  const REL = { piano: 0.55, guitar: 0.45, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
+  // softer onsets (seconds) and a gentle per-instrument low-pass (Hz) to take the edge off
+  const ATK = { piano: 0.014, guitar: 0.012, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
+  const TONE = { piano: 4200, guitar: 3800, cello: 2600, clarinet: 2800, trumpet: 2400 };
   const buffers = {}; // inst -> {midi: AudioBuffer}
   const loading = {}; // inst -> Promise
 
@@ -23,15 +26,17 @@
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC({ latencyHint: 'interactive' });
     comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -12; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
-    master = ctx.createGain(); master.gain.value = 0.85;
-    // gentle tone shaping: tame harsh highs a little
-    const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 6500; shelf.gain.value = -3;
-    // room reverb
-    const conv = ctx.createConvolver(); conv.buffer = impulse(1.8, 2.6);
-    wet = ctx.createGain(); wet.gain.value = 0.16;
+    comp.threshold.value = -18; comp.knee.value = 24; comp.ratio.value = 2.2; comp.attack.value = 0.012; comp.release.value = 0.3;
+    master = ctx.createGain(); master.gain.value = 0.75;
+    // tone shaping: roll off harsh highs and a little boxiness
+    const shelf = ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 4500; shelf.gain.value = -6;
+    const mid = ctx.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 2800; mid.Q.value = 1.1; mid.gain.value = -2.5;
+    shelf.connect(mid);
+    // warm room reverb
+    const conv = ctx.createConvolver(); conv.buffer = impulse(2.2, 2.4);
+    wet = ctx.createGain(); wet.gain.value = 0.24;
     analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
-    master.connect(shelf); shelf.connect(comp);
+    master.connect(shelf); mid.connect(comp);
     master.connect(conv); conv.connect(wet); wet.connect(comp);
     comp.connect(analyser); analyser.connect(ctx.destination);
     newBus();
@@ -98,14 +103,16 @@
     const src = ctx.createBufferSource();
     src.buffer = set[best];
     src.playbackRate.value = Math.pow(2, (m - best) / 12);
-    const g = ctx.createGain();
+    const g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.5;
+    lp.frequency.value = Math.min(TONE[inst], Math.max(1600, mtof(m) * 9));
     const peak = vel * TRIM[inst];
     const rel = REL[inst];
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + (inst === 'cello' ? 0.03 : 0.006));
+    g.gain.linearRampToValueAtTime(peak, t + ATK[inst]);
     g.gain.setValueAtTime(peak, t + d);
     g.gain.setTargetAtTime(0, t + d, rel / 3);
-    src.connect(g); g.connect(out);
+    src.connect(lp); lp.connect(g); g.connect(out);
     src.start(t);
     src.stop(Math.min(t + d + rel * 2 + 0.05, t + src.buffer.duration / src.playbackRate.value + 0.05));
   }
@@ -204,8 +211,8 @@
       g.gain.exponentialRampToValueAtTime(0.0001, t + at + d);
       o.connect(g); g.connect(comp); o.start(t + at); o.stop(t + at + d + 0.02);
     };
-    if (kind === 'good') { blip(880, 0, 0.18, 'sine', 0.07); blip(1318.5, 0.07, 0.3, 'sine', 0.07); }
-    else if (kind === 'bad') { blip(311, 0, 0.22, 'sine', 0.08); blip(233, 0.09, 0.32, 'sine', 0.08); }
+    if (kind === 'good') { blip(659.3, 0, 0.22, 'sine', 0.05); blip(987.8, 0.08, 0.34, 'sine', 0.05); }
+    else if (kind === 'bad') { blip(293.7, 0, 0.26, 'sine', 0.055); blip(246.9, 0.1, 0.36, 'sine', 0.055); }
     else if (kind === 'done') { [523.3, 659.3, 784, 1046.5].forEach((f, i) => blip(f, i * 0.09, 0.4, 'sine', 0.06)); }
     else if (kind === 'tap') { blip(660, 0, 0.05, 'sine', 0.03); }
   }

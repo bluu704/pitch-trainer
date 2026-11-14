@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.0';
+  const VERSION = '1.2.1';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -746,13 +746,20 @@
     if (sk === 'pitch' && S.settings.keyboard) return keyboardHTML(q.choices, practice);
     const n = q.choices.length;
     const g = q.o && q.o.func ? (n <= 2 ? 'g2' : 'g3') : sk === 'scales' || sk === 'progs' ? 'g2' : sk === 'chords' ? (n <= 4 ? 'g2' : 'g3') : n === 2 ? 'g2' : n === 3 ? 'g3' : n <= 4 ? 'g2' : '';
-    return `<div class="grid ${g}">${q.choices.map((c, i) => `<button class="ch-b" data-act="pick" data-k="${i < 9 ? i + 1 : i === 9 ? 0 : ''}" data-it="${esc(JSON.stringify(c))}">${esc(sk === 'pitch' ? lbl(sk, c, practice) : M.shortLabel(sk, c))}${sk === 'chords' ? `<small>${M.CHORDS[c].kind === 'triad' ? 'triad' : '7th'}</small>` : ''}</button>`).join('')}</div>`;
+    return `<div class="grid ${g}">${q.choices.map((c, i) => `<button class="ch-b" data-act="pick" data-k="${POS_KEYS[i] || ''}" ${sk === 'pitch' ? `data-kl="${noteKey(practice ? (c + (12 - S.settings.transpose) % 12) % 12 : c)}"` : ''} data-it="${esc(JSON.stringify(c))}">${esc(sk === 'pitch' ? lbl(sk, c, practice) : M.shortLabel(sk, c))}${sk === 'chords' ? `<small>${M.CHORDS[c].kind === 'triad' ? 'triad' : '7th'}</small>` : ''}</button>`).join('')}</div>`;
   }
+  const NAT = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' };
+  const usesFlats = () => S.settings.names === 'flat' || S.settings.names === 'solFlat';
+  function noteKey(pc) {
+    if (NAT[pc]) return NAT[pc];
+    return '⇧' + (usesFlats() ? NAT[(pc + 1) % 12] : NAT[(pc + 11) % 12]);
+  }
+  const POS_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
   function keyboardHTML(choices, practice) {
     const whites = [0, 2, 4, 5, 7, 9, 11], blacks = { 1: 1, 3: 2, 6: 4, 8: 5, 10: 6 };
     const w = 100 / 7;
-    let h = whites.map((pc, i) => `<button class="kw ${choices.includes(pc) ? '' : 'dis'}" style="left:${i * w}%;width:${w}%" data-act="pick" data-it="${pc}">${esc(lbl('pitch', pc, practice))}</button>`).join('');
-    h += Object.keys(blacks).map((pc) => `<button class="kbk ${choices.includes(+pc) ? '' : 'dis'}" style="left:${blacks[pc] * w - w * 0.32}%;width:${w * 0.64}%" data-act="pick" data-it="${pc}">${esc(lbl('pitch', +pc, practice))}</button>`).join('');
+    let h = whites.map((pc, i) => `<button class="kw ${choices.includes(pc) ? '' : 'dis'}" style="left:${i * w}%;width:${w}%" data-act="pick" data-it="${pc}" data-kl="${noteKey(practice ? (pc + (12 - S.settings.transpose) % 12) % 12 : pc)}">${esc(lbl('pitch', pc, practice))}</button>`).join('');
+    h += Object.keys(blacks).map((pc) => `<button class="kbk ${choices.includes(+pc) ? '' : 'dis'}" style="left:${blacks[pc] * w - w * 0.32}%;width:${w * 0.64}%" data-act="pick" data-it="${pc}" data-kl="${noteKey(practice ? (+pc + (12 - S.settings.transpose) % 12) % 12 : +pc)}">${esc(lbl('pitch', +pc, practice))}</button>`).join('');
     return `<div class="kb">${h}</div>`;
   }
   async function playQ(q) {
@@ -1112,13 +1119,14 @@
         ${row('logout', I.logout, 'Log out', '', chev)}
         ${row('delete', I.trash, 'Delete account', '', chev)}
       </div></div></div>
-      <div class="foot"><button data-act="doc" data-k="privacy">Privacy</button><button data-act="doc" data-k="terms">Terms</button><button data-act="doc" data-k="ack">Acknowledgements</button><button data-act="doc" data-k="log">Update log</button><div>Version ${VERSION}</div></div>`;
+      <div class="foot"><button data-act="doc" data-k="privacy">Privacy</button><button data-act="doc" data-k="terms">Terms</button><button data-act="doc" data-k="ack">Acknowledgements</button><button data-act="doc" data-k="log">Update log</button><button data-act="doc" data-k="keys">Keyboard shortcuts</button><div>Version ${VERSION}</div></div>`;
   }
   const DOCS = {
+    keys: ['Keyboard shortcuts', '<ul><li><b>1–9, 0, -, =</b>: pick answer 1 to 12 (the number shows on each button)</li><li><b>C D E F G A B</b>: pick that note in pitch questions</li><li><b>Shift + letter</b>: the flat of that note, e.g. Shift+B = B♭ (the sharp if note names are set to sharps)</li><li><b>Y / N</b>: yes or no</li><li><b>Space</b> or <b>R</b>: hear it again</li><li><b>Backspace</b>: undo in "name them in order" questions</li><li><b>Enter</b>: continue · <b>Esc</b>: back</li></ul>'],
     privacy: ['Privacy', '<h4>Your data stays on your device</h4><p>Pitch Trainer stores your progress and settings only in this device\'s local storage. Nothing is sent to a server.</p><h4>No tracking</h4><p>There are no ads, analytics, or third-party trackers.</p><h4>Deleting data</h4><p>Use Settings → Delete account to erase everything instantly.</p>'],
     terms: ['Terms', '<p>Pitch Trainer is provided as-is for personal ear-training practice. You may use it freely. We make no guarantee that it is free of errors, and we are not liable for any damages arising from its use.</p>'],
     ack: ['Acknowledgements', '<ul><li>Instrument samples: FluidR3 GM SoundFont by Frank Wen, licensed CC BY 3.0, rendered by the midi-js-soundfonts project (Benjamin Gleitzman).</li><li>Typeface: Nunito (SIL Open Font License).</li><li>Android build: Capacitor.</li><li>Icons drawn in the style of Lucide (ISC License).</li></ul>'],
-    log: ['Update log', `<h4>Version ${VERSION}</h4><ul><li>New question types: odd one out, interval and chord chains, chord functions (I → ii, iii, IV, V, vi).</li><li>25 new lessons (236 total) and longer lessons: 18 questions, 22 for reviews, 28 for checkpoints.</li><li>Answers stay visible above the feedback panel on phones.</li><li>Fixes found by testing every lesson end to end.</li></ul><h4>Version 1.1.0</h4><ul><li>Real recorded instruments: piano, guitar, cello, clarinet, trumpet, with a soft room reverb.</li><li>Choose the ear-reset sound: harmonious, mixed, or dissonant.</li><li>62 new lessons (211 total): Deep Bass, Sky High, Melodies, Five Octaves, Quick Ears, Inversion Lab, Going Down, Random Keys and more.</li><li>New question type: name a short melody note by note.</li><li>Endless mode: Random Mix plus one endless mode per skill.</li><li>Desktop layout with keyboard shortcuts for the web version.</li></ul><h4>Version 1.0.0</h4><ul><li>Five skills, 149 lessons, skill paths, practice, streaks, light and dark themes.</li></ul>`]
+    log: ['Update log', `<h4>Version ${VERSION}</h4><ul><li>Softer, warmer instrument sound: gentler note starts and endings, less harsh treble, a little more room.</li><li>Keyboard: every answer has a key (1–9, 0, -, =), and pitch questions accept note letters, with Shift for flats (Shift+B = B♭).</li></ul><h4>Version 1.2.0</h4><ul><li>New question types: odd one out, interval and chord chains, chord functions (I → ii, iii, IV, V, vi).</li><li>25 new lessons (236 total) and longer lessons: 18 questions, 22 for reviews, 28 for checkpoints.</li><li>Answers stay visible above the feedback panel on phones.</li><li>Fixes found by testing every lesson end to end.</li></ul><h4>Version 1.1.0</h4><ul><li>Real recorded instruments: piano, guitar, cello, clarinet, trumpet, with a soft room reverb.</li><li>Choose the ear-reset sound: harmonious, mixed, or dissonant.</li><li>62 new lessons (211 total): Deep Bass, Sky High, Melodies, Five Octaves, Quick Ears, Inversion Lab, Going Down, Random Keys and more.</li><li>New question type: name a short melody note by note.</li><li>Endless mode: Random Mix plus one endless mode per skill.</li><li>Desktop layout with keyboard shortcuts for the web version.</li></ul><h4>Version 1.0.0</h4><ul><li>Five skills, 149 lessons, skill paths, practice, streaks, light and dark themes.</li></ul>`]
   };
   function ideasList() {
     if (!S.ideas) S.ideas = [
@@ -1266,13 +1274,26 @@
       return;
     }
     if (k === ' ' || k === 'r' || k === 'R') { click(q('canvas.wave')) || click(q('[data-act="replay"]')); e.preventDefault(); return; }
-    if (k === 'y' || k === 'Y') { click(q('[data-act="yn"][data-v="1"]')); return; }
-    if (k === 'n' || k === 'N') { click(q('[data-act="yn"][data-v="0"]')); return; }
+    if ((k === 'y' || k === 'Y') && q('[data-act="yn"]')) { click(q('[data-act="yn"][data-v="1"]')); return; }
+    if ((k === 'n' || k === 'N') && q('[data-act="yn"]')) { click(q('[data-act="yn"][data-v="0"]')); return; }
     if (k === 'Backspace') { click(q('[data-act="undo"]')); return; }
-    if (/^[0-9]$/.test(k)) {
+    if (/^[0-9=-]$/.test(k)) {
       const opt = q(`[data-act="opt"][data-k="${k}"]`);
       if (opt) { click(opt); return; }
       click(q(`.ch-b[data-act="pick"][data-k="${k}"]`));
+      return;
+    }
+    // note letters for pitch questions: C D E F G A B, Shift = flat (or sharp with sharp names)
+    const m = /^Key([A-G])$/.exec(e.code || '');
+    const cur = t.name === 'practice' ? (PS && PS.q) : (LS && LS.steps[LS.i] && LS.steps[LS.i].q);
+    if (m && cur && cur.sk === 'pitch') {
+      const base = +Object.keys(NAT).find((pc) => NAT[pc] === m[1]);
+      let pc = base;
+      if (e.shiftKey) pc = usesFlats() ? (base + 11) % 12 : (base + 1) % 12;
+      // in practice mode the buttons show transposed names; the letter means the name you see
+      if (t.name === 'practice' && S.settings.transpose) pc = (pc - (12 - S.settings.transpose) % 12 + 12) % 12;
+      const btn = q(`[data-act="pick"][data-it="${pc}"]`);
+      if (btn && !btn.classList.contains('dis')) { click(btn); e.preventDefault(); }
     }
   });
   // canvas.wave has data-act="replay"; make it clickable via keyboard helper

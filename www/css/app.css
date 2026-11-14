@@ -506,6 +506,8 @@ html.desktop .grid { max-width: 640px; gap: 12px; }
 html.desktop .ch-b { min-height: 58px; font-size: 16px; position: relative; }
 html.desktop .ch-b:hover { border-color: var(--c); }
 html.desktop .ch-b[data-k]:not([data-k=""])::before { content: attr(data-k); position: absolute; top: 5px; left: 7px; font-size: 10px; font-weight: 800; color: var(--faint); }
+html.desktop .ch-b[data-k][data-kl]:not([data-kl=""])::before { content: attr(data-kl); }
+html.desktop .kw[data-kl]::before, html.desktop .kbk[data-kl]::before { content: attr(data-kl); position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 800; opacity: .55; }
 html.desktop .kb { max-width: 640px; height: 190px; }
 html.desktop kbd { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 5px; font: 700 10px/1.5 'Nunito', sans-serif; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.35); }
 html.desktop .feedback { display: flex; justify-content: center; }
