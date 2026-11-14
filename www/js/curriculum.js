@@ -365,6 +365,14 @@
         { t: 'Maj7(9), Any Voicing', d: 'The same chords, stacked a new way each time.', p: G9([0, 2, 4, 5, 7, 9, 11]), o: { vary: 1 }, slides: 'vary' },
         { t: 'Maj7(9) Shape', d: 'Checkpoint: name every maj7(9).', p: G9([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) }
       ] },
+      { t: 'Shell Chords', d: 'Root, 3rd, and 7th only: the 5th is left out.', nu: 1, o: { vary: 'shell' }, L: [
+        { t: 'Major 7 or Dominant 7', d: 'Two shells: maj7 and 7.', p: ['maj7', 'dom7'], slides: 'shell' },
+        { t: 'Add the Minor 7', d: 'maj7, 7, and m7 shells.', p: ['maj7', 'dom7', 'min7'] },
+        { t: 'Sixth Shells', d: '6 and m6 shells, with the 7ths.', p: ['maj6', 'm6', 'maj7', 'min7'] },
+        { t: 'All Shells', d: 'maj7, 7, m7, 6, and m6.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'] },
+        { t: 'Shells, Low and Wide', d: 'All shells, any register.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'], o: { wide: 1 } },
+        { t: 'Shell Chords', d: 'Checkpoint: shell chords.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'] }
+      ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
@@ -550,7 +558,7 @@
   const ORDER = {
     pitch: ['Middle C Major', 'Chromatic Middle', 'The Basement', 'The Attic', 'Odd One Out', 'White-Key Mastery', 'Chromatic Mastery', 'Chord Roots', 'Deep Bass', 'Sky High', 'Melodies', 'Two at Once', 'Five Octaves', 'Absolute Pitch'],
     intervals: ['Perfect Intervals', 'Thirds & Perfects', 'Small Intervals', 'Consonance', 'The Stretches', 'Full Chromatic', 'Odd Interval Out', 'Every Direction', 'Low & Deep', 'New Voices', 'Quick Ears', 'Interval Chains', 'Compound Intervals', 'Final Exam: Absolute Mastery'],
-    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Maj7(9) Shape', 'Final Exam: Harmonic Mastery'],
+    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Shell Chords', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Maj7(9) Shape', 'Final Exam: Harmonic Mastery'],
     scales: ['The Foundation', 'Minor Modes', 'Diatonic Mastery', 'All 11 Scales', 'World Scales', 'Odd Scale Out', 'Going Down', 'Quick Scales', 'Scale Colors', 'Exotic Minors', 'Jazz Scales', 'Symmetric Scales', 'Final: Any Scale, Any Key'],
     progs: ['Major Foundations', 'Chord Functions', 'Into the Minor', 'Pop & Rock Loops', 'All Nine', 'Borrowed Functions', 'Borrowed Colors', 'The Canon', 'Random Keys', 'Real Voicings', 'Up Tempo', 'Jazz Changes', 'Low Voicings', 'Final: Any Progression, Any Key']
   };

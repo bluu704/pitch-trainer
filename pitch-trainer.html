@@ -1225,6 +1225,13 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
       case 'drop2': { if (close.length < 4) return [close[1] - 12].concat([close[0], close[2]]).sort((a, b) => a - b); const c = close.slice(0, 4); const top2 = c[2]; return [top2 - 12, c[0], c[1], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
       case 'drop3': { if (close.length < 4) return [close[0] - 12, close[1], close[2] + 12].sort((a, b) => a - b); const c = close.slice(0, 4); return [c[1] - 12, c[0], c[2], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
       case 'spread': return spreadVoicing(ivs.map((x) => (root + x) % 12), root % 12, root);
+      case 'shell': { // root, 3rd and 7th (or 6th) only, the 5th left out: R-3-7 or R-7-3
+        const third = ivs.find((x) => x === 3 || x === 4), sev = ivs.find((x) => x === 9 || x === 10 || x === 11);
+        if (third == null || sev == null) return close;
+        const pc = root % 12;
+        if (Math.random() < 0.5) { const r = 45 + ((pc - 45) % 12 + 12) % 12; return [r, r + third, r + sev]; } // 5th-string shell: R-3-7, close
+        const r = 40 + ((pc - 40) % 12 + 12) % 12; return [r, r + sev, r + third + 12];                          // 6th-string shell: R-7-3
+      }
       default: return close;
     }
   }
@@ -1880,6 +1887,14 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
         { t: 'Maj7(9), Any Voicing', d: 'The same chords, stacked a new way each time.', p: G9([0, 2, 4, 5, 7, 9, 11]), o: { vary: 1 }, slides: 'vary' },
         { t: 'Maj7(9) Shape', d: 'Checkpoint: name every maj7(9).', p: G9([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) }
       ] },
+      { t: 'Shell Chords', d: 'Root, 3rd, and 7th only: the 5th is left out.', nu: 1, o: { vary: 'shell' }, L: [
+        { t: 'Major 7 or Dominant 7', d: 'Two shells: maj7 and 7.', p: ['maj7', 'dom7'], slides: 'shell' },
+        { t: 'Add the Minor 7', d: 'maj7, 7, and m7 shells.', p: ['maj7', 'dom7', 'min7'] },
+        { t: 'Sixth Shells', d: '6 and m6 shells, with the 7ths.', p: ['maj6', 'm6', 'maj7', 'min7'] },
+        { t: 'All Shells', d: 'maj7, 7, m7, 6, and m6.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'] },
+        { t: 'Shells, Low and Wide', d: 'All shells, any register.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'], o: { wide: 1 } },
+        { t: 'Shell Chords', d: 'Checkpoint: shell chords.', p: ['maj7', 'dom7', 'min7', 'maj6', 'm6'] }
+      ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
         { t: 'Broken Chords', d: 'Every chord, one note at a time.', p: ALLC, o: { arp: 1 } },
@@ -2065,7 +2080,7 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
   const ORDER = {
     pitch: ['Middle C Major', 'Chromatic Middle', 'The Basement', 'The Attic', 'Odd One Out', 'White-Key Mastery', 'Chromatic Mastery', 'Chord Roots', 'Deep Bass', 'Sky High', 'Melodies', 'Two at Once', 'Five Octaves', 'Absolute Pitch'],
     intervals: ['Perfect Intervals', 'Thirds & Perfects', 'Small Intervals', 'Consonance', 'The Stretches', 'Full Chromatic', 'Odd Interval Out', 'Every Direction', 'Low & Deep', 'New Voices', 'Quick Ears', 'Interval Chains', 'Compound Intervals', 'Final Exam: Absolute Mastery'],
-    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Maj7(9) Shape', 'Final Exam: Harmonic Mastery'],
+    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Shell Chords', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Maj7(9) Shape', 'Final Exam: Harmonic Mastery'],
     scales: ['The Foundation', 'Minor Modes', 'Diatonic Mastery', 'All 11 Scales', 'World Scales', 'Odd Scale Out', 'Going Down', 'Quick Scales', 'Scale Colors', 'Exotic Minors', 'Jazz Scales', 'Symmetric Scales', 'Final: Any Scale, Any Key'],
     progs: ['Major Foundations', 'Chord Functions', 'Into the Minor', 'Pop & Rock Loops', 'All Nine', 'Borrowed Functions', 'Borrowed Colors', 'The Canon', 'Random Keys', 'Real Voicings', 'Up Tempo', 'Jazz Changes', 'Low Voicings', 'Final: Any Progression, Any Key']
   };
@@ -2759,6 +2774,7 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
       func: ['Chord functions', 'Every key has a home chord, I. Each other chord pulls away from home in its own way.', ['First you hear {home} (I).', 'Then one more chord, like {IV, V, vi}, or a borrowed {iv, ♭VII, ♭VI}.', 'Name it by how it feels next to home.']],
       dyad: ['Two at once', 'Now two notes sound together. Pick out both of them.', ['Listen for the {lower} note, then the {upper} one.', 'Tap them {low to high}. Use undo if you slip.', 'Hum each note separately if it helps.']],
       root: ['Chord roots', 'A chord is built on one note, its root. Here the root is also in the bass.', ['Listen to the {lowest note} of the chord.', 'Name that note, just like a single note.', 'Major or minor does not matter, only the root.']],
+      shell: ['Shell chords', 'A shell chord keeps only the root, the 3rd, and the 7th. The 5th is left out, so the chord sounds lighter and clearer. Guitarists and jazz pianists use shells all the time.', ['The {3rd} tells you major or minor.', 'The {7th} (or 6th) tells you maj7, 7, or 6.', 'The root stays on the bottom; the 3rd and 7th swap places on top.']],
       vary: ['Any voicing', 'A chord keeps its name however its notes are stacked: close together, spread over two octaves, or with a different note on the bottom. Here every question uses a new voicing.', ['Ignore {how high} and {how wide} it is.', 'Listen for the {color}: bright, dark, tense, dreamy.', 'Tap the wave to hear the same voicing again.']],
       inv: ['Inversions', 'The same chord can be stacked with a different note on the bottom. That bottom note changes the color.', ['{Root position}: the root is on the bottom. Solid and settled.', '{1st inversion}: the 3rd on the bottom. Lighter and moving.', '{2nd inversion}: the 5th on the bottom. Open and unstable. 7th chords add a {3rd inversion} with the 7th on the bottom.']]
     }[kind];

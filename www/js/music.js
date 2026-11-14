@@ -389,6 +389,13 @@
       case 'drop2': { if (close.length < 4) return [close[1] - 12].concat([close[0], close[2]]).sort((a, b) => a - b); const c = close.slice(0, 4); const top2 = c[2]; return [top2 - 12, c[0], c[1], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
       case 'drop3': { if (close.length < 4) return [close[0] - 12, close[1], close[2] + 12].sort((a, b) => a - b); const c = close.slice(0, 4); return [c[1] - 12, c[0], c[2], c[3]].concat(close.slice(4)).sort((a, b) => a - b); }
       case 'spread': return spreadVoicing(ivs.map((x) => (root + x) % 12), root % 12, root);
+      case 'shell': { // root, 3rd and 7th (or 6th) only, the 5th left out: R-3-7 or R-7-3
+        const third = ivs.find((x) => x === 3 || x === 4), sev = ivs.find((x) => x === 9 || x === 10 || x === 11);
+        if (third == null || sev == null) return close;
+        const pc = root % 12;
+        if (Math.random() < 0.5) { const r = 45 + ((pc - 45) % 12 + 12) % 12; return [r, r + third, r + sev]; } // 5th-string shell: R-3-7, close
+        const r = 40 + ((pc - 40) % 12 + 12) % 12; return [r, r + sev, r + third + 12];                          // 6th-string shell: R-7-3
+      }
       default: return close;
     }
   }
