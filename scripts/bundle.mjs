@@ -26,3 +26,18 @@ html = html
 
 writeFileSync(join(root, 'pitch-trainer.html'), html);
 console.log('wrote pitch-trainer.html', (html.length / 1024 / 1024).toFixed(1) + ' MB');
+
+// claude.ai Artifact version: the publisher adds its own document shell (doctype, head, charset, viewport),
+// so the page starts with its <title> and leaves out the outer tags.
+import { mkdirSync } from 'node:fs';
+const art = html
+  .replace(/<!doctype html>\s*/i, '')
+  .replace(/<html[^>]*>\s*/i, '').replace(/<\/html>\s*/i, '')
+  .replace(/<head>\s*/i, '').replace(/<\/head>\s*/i, '')
+  .replace(/<body>\s*/i, '').replace(/<\/body>\s*/i, '')
+  .replace(/\s*<meta charset="utf-8">/i, '')
+  .replace(/\s*<meta name="viewport"[^>]*>/i, '')
+  .replace(/\s*<title>Pitch Trainer<\/title>/, '');
+mkdirSync(join(root, 'build'), { recursive: true });
+writeFileSync(join(root, 'build', 'pitch-trainer.html'), '<title>Pitch Trainer</title>\n' + art.trimStart());
+console.log('wrote build/pitch-trainer.html (artifact version)');

@@ -7,3 +7,4 @@ android/.idea/
 android/capacitor-cordova-android-plugins/build/
 *.apk
 .DS_Store
+build/
