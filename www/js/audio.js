@@ -9,15 +9,18 @@
 
   const SAMPLE_INST = ['piano', 'guitar', 'cello', 'clarinet', 'trumpet'];
   const POINTS = []; for (let m = 24; m <= 96; m += 3) POINTS.push(m);
+  // clarinet is sampled on every semitone in its range, so its notes are never pitch-shifted
+  const CLAR = []; for (let m = 48; m <= 96; m++) CLAR.push(m);
+  const pointsOf = (inst) => (inst === 'clarinet' ? CLAR : POINTS);
   // loudness matching (samples are peak-normalized per instrument)
-  const TRIM = { piano: 0.8, guitar: 0.66, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
+  const TRIM = { piano: 0.8, guitar: 0.56, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
   // how long the note rings after its nominal end
   const REL = { piano: 0.7, guitar: 0.6, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
   // softer onsets (seconds) and a gentle per-instrument low-pass (Hz) to take the edge off
   // how much of each instrument goes to the room reverb (guitar stays close and dry)
   const VERB = { piano: 0.24, guitar: 0.06, cello: 0.26, clarinet: 0.24, trumpet: 0.22, sine: 0.24 };
   const ATK = { piano: 0.028, guitar: 0.035, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
-  const TONE = { piano: 2800, guitar: 3200, cello: 2600, clarinet: 2800, trumpet: 2400 };
+  const TONE = { piano: 2800, guitar: 5200, cello: 2600, clarinet: 2800, trumpet: 2400 };
   const buffers = {}; // inst -> {midi: AudioBuffer}
   const loading = {}; // inst -> Promise
 
@@ -87,32 +90,32 @@
     makeCtx();
     buffers[inst] = buffers[inst] || {};
     const embedded = window.PT_SAMPLES && window.PT_SAMPLES[inst];
-    loading[inst] = Promise.all(POINTS.map((m) => {
+    loading[inst] = Promise.all(pointsOf(inst).map((m) => {
       const src = embedded ? Promise.resolve(b64ToBuf(embedded[m]))
         : fetch('samples/' + inst + '/' + m + '.mp3').then((r) => { if (!r.ok) throw new Error('404'); return r.arrayBuffer(); });
       return src.then(decode).then((b) => { buffers[inst][m] = b; }).catch(() => {});
     })).then(() => Object.keys(buffers[inst]).length > 0);
     return loading[inst];
   }
-  const ready = (inst) => !SAMPLE_INST.includes(inst) || (buffers[inst] && Object.keys(buffers[inst]).length >= POINTS.length - 2);
+  const ready = (inst) => !SAMPLE_INST.includes(inst) || (buffers[inst] && Object.keys(buffers[inst]).length >= pointsOf(inst).length - 2);
   function preload(list) {
     makeCtx();
     return Promise.all((list || SAMPLE_INST).map(loadInstrument));
   }
 
   /* ---------- voices ---------- */
-  function sampleVoice(inst, m, t, d, vel, out) {
+  function sampleVoice(inst, m, t, d, vel, out, cents) {
     const set = buffers[inst];
     let best = null, bd = 99;
-    for (const p of POINTS) { if (set[p] && Math.abs(p - m) < bd) { bd = Math.abs(p - m); best = p; } }
+    for (const p of pointsOf(inst)) { if (set[p] && Math.abs(p - m) < bd) { bd = Math.abs(p - m); best = p; } }
     if (best == null) return synthVoice(m, t, d, vel, out);
     const src = ctx.createBufferSource();
     src.buffer = set[best];
-    src.playbackRate.value = Math.pow(2, (m - best) / 12);
+    src.playbackRate.value = Math.pow(2, (m - best) / 12 + (cents || 0) / 1200);
     const g = ctx.createGain(), lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.Q.value = 0.5;
     const cut = Math.min(TONE[inst], Math.max(1400, mtof(m) * 8));
-    if (inst === 'piano' || inst === 'guitar') {
+    if (inst === 'piano') {
       lp.frequency.setValueAtTime(cut, t);
       lp.frequency.exponentialRampToValueAtTime(Math.max(900, cut * 0.6), t + 0.6);
     } else lp.frequency.value = cut;
@@ -123,9 +126,16 @@
     g.gain.setValueAtTime(peak, t + d);
     g.gain.setTargetAtTime(0, t + d, rel / 3);
     if (inst === 'guitar') {
-      // acoustic body: a little low-mid warmth, keep the string sparkle
-      const body = ctx.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 190; body.Q.value = 1; body.gain.value = 3;
-      src.connect(body); body.connect(lp);
+      // acoustic body: air resonance (~110 Hz) and top plate (~240 Hz) for warmth,
+      // a gentle lift around 1.2 kHz so the overtones ring out, and the top end left open
+      const air = ctx.createBiquadFilter(); air.type = 'peaking'; air.frequency.value = 110; air.Q.value = 1.2; air.gain.value = 5.5;
+      const plate = ctx.createBiquadFilter(); plate.type = 'peaking'; plate.frequency.value = 240; plate.Q.value = 0.9; plate.gain.value = 4.5;
+      const bloom = ctx.createBiquadFilter(); bloom.type = 'peaking'; bloom.frequency.value = 1200; bloom.Q.value = 0.7; bloom.gain.value = 2;
+      src.connect(air); air.connect(plate); plate.connect(bloom); bloom.connect(lp);
+      // a second, slightly detuned and delayed string doubling thickens the overtones (like a 12-string shimmer, but subtle)
+      const dbl = ctx.createBufferSource(); dbl.buffer = src.buffer; dbl.playbackRate.value = src.playbackRate.value * Math.pow(2, 6 / 1200);
+      const dg = ctx.createGain(); dg.gain.value = 0.32; dbl.connect(dg); dg.connect(air);
+      dbl.start(t + 0.011); dbl.stop(Math.min(t + d + rel * 2 + 0.06, t + 0.011 + dbl.buffer.duration / dbl.playbackRate.value));
     } else src.connect(lp);
     lp.connect(g); g.connect(out);
     const send = ctx.createGain(); send.gain.value = VERB[inst]; g.connect(send); send.connect(busV);
@@ -204,9 +214,19 @@
     for (const s of steps) {
       const v = s.v || 0.85;
       const chordScale = s.notes.length > 1 ? 1 / Math.sqrt(s.notes.length) * 1.2 : 1;
+      const chord = s.notes.length > 1;
+      const order = s.notes.slice().sort((a, b) => a - b);
       for (const n of s.notes) {
         const m = n + sh;
-        if (useSamples) sampleVoice(inst, m, t0 + s.t, s.d, v * chordScale, bus);
+        // real players never hit a chord at exactly the same instant or perfectly in tune
+        let off = 0, cents = 0, vv = v * chordScale;
+        if (chord && useSamples) {
+          const rank = order.indexOf(n);
+          if (inst === 'guitar') off = rank * 0.016;                         // strum, low to high
+          else if (inst === 'piano') off = Math.random() * 0.006;
+          else { off = Math.random() * 0.028; cents = (Math.random() * 2 - 1) * 5; vv *= 0.9 + Math.random() * 0.15; } // ensemble
+        }
+        if (useSamples) sampleVoice(inst, m, t0 + s.t + off, Math.max(0.1, s.d - off), vv, bus, cents);
         else synthVoice(m, t0 + s.t, s.d, v * chordScale, bus, inst === 'sine');
       }
       end = Math.max(end, s.t + s.d);

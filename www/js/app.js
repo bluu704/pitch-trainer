@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.4';
+  const VERSION = '1.2.5';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -844,12 +844,25 @@
     const yours = compareItem(q, picked);
     const yLabel = yours == null ? '' : q.kind === 'seq' ? 'Yours' : q.kind === 'yesno' ? nm(yours) : 'Yours: ' + nm(yours);
     const cmp = !ok && yours != null ? `<div class="cmp"><button data-act="cmp" data-w="you">${I.play} ${yLabel}</button><button data-act="cmp" data-w="ans">${I.play} Answer${q.kind === 'seq' ? '' : ': ' + nm(q.target)}</button></div>` : '';
-    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
+    fb.innerHTML = `<div class="fb-in"><h4>${ok ? I.check + ' ' + pick(['Nice!', 'Correct!', 'Great ear!', 'Nailed it!']) : I.x + ' Not quite'}</h4><p>${msg}</p>${scaleFeedback(q)}${cmp}<button class="btn ${ok ? 'green' : 'danger'}" data-act="next">Continue<kbd>Enter</kbd></button></div>`;
     lesson.appendChild(fb);
     // keep the marked answers visible above the feedback panel
     const lb = lesson.querySelector('.lbody'), ft = lesson.querySelector('.lfoot');
     if (lb) { const extra = fb.offsetHeight - (ft ? ft.offsetHeight : 0); if (extra > 0) { lb.style.paddingBottom = (extra + 16) + 'px'; lb.scrollTop = lb.scrollHeight; } }
     if (!ok && S.settings.hints && yours != null) compareSeq(q, yours);
+  }
+  /* answer screen for scales: what was actually played, written for its key signature */
+  function scaleFeedback(q) {
+    if (q.sk !== 'scales' || q.o.func) return '';
+    let item = q.target, steps = q.sound.steps;
+    if (q.kind === 'odd') { item = q.options[q.oddIdx].it; steps = q.options[q.oddIdx].sound.steps; }
+    const notes = steps.map((x) => x.notes[0]);
+    const root = Math.min(...notes), down = notes[0] > notes[notes.length - 1];
+    const sp = M.scaleSpelling(item, root % 12, S.settings.names);
+    const sig = sp.sigCount ? `${sp.sigCount}${sp.sigType} (${sp.sigList.join(' ')})` : 'no sharps or flats';
+    return `<div class="fb-spell"><div class="fs-h">${q.kind === 'odd' ? 'The odd one: ' : 'You heard: '}<b>${esc(M.SCALES[item].name)} on ${esc(sp.root)}</b>${down ? ' · played downward' : ''}</div>
+      <div class="sp-notes">${sp.notes.map((n) => `<span class="sp-n ${n.out ? 'out' : ''}">${esc(n.name)}</span>`).join('')}</div>
+      <div class="sp-sig"><b>Key signature:</b> ${esc(sig)}, like ${esc(sp.sigMajor)} major${sp.notes.some((n) => n.out) ? '. Highlighted notes are outside it.' : '.'}</div></div>`;
   }
   function soundFor(q, item) { return q.kind === 'seq' ? M.seqInstance(q.sk, item, q.o) : M.instance(q.sk, item, q.o); }
   function compareItem(q, picked) {

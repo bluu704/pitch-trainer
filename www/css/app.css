@@ -531,3 +531,10 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
 .lrow.sc { flex-wrap: wrap; row-gap: 4px; }
 .sp-line { flex-basis: 100%; font-size: 12.5px; color: var(--muted); letter-spacing: .3px; padding-left: 2px; }
 .sp-line b { color: var(--c); }
+
+/* scale spelling on the answer screen */
+.fb-spell { display: flex; flex-direction: column; gap: 8px; margin: -4px 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--card); border: 1.5px solid var(--border); }
+.fs-h { font-size: 13.5px; }
+.fb-spell .sp-n { min-width: 30px; padding: 4px 6px; font-size: 13.5px; border-radius: 8px; }
+.fb-spell .sp-notes { gap: 5px; }
+.fb-spell .sp-sig { font-size: 12.5px; }
