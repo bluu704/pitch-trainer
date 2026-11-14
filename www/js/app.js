@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.3.0';
+  const VERSION = '1.3.1';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -250,7 +250,12 @@
     applyTheme();
     if (S.loggedOut) { $app.innerHTML = welcomeHTML(); return; }
     const t = top();
-    if (!t) { $app.innerHTML = tabsHTML(); return; }
+    if (!t) { // keep the scroll position when the same tab re-renders (toggles, segmented buttons)
+      const ts = document.getElementById('tabscroll'), keep = ts && ts.dataset.tab === nav.tab ? ts.scrollTop : 0;
+      $app.innerHTML = tabsHTML();
+      const n = document.getElementById('tabscroll'); if (n && keep) n.scrollTop = keep;
+      return;
+    }
     if (t.name === 'path') { $app.innerHTML = pathHTML(t.params.sk); afterPath(t.params.sk); return; }
     if (t.name === 'lesson') { renderLesson(); return; }
     if (t.name === 'practice') { renderPractice(); return; }
@@ -264,7 +269,7 @@
     else if (nav.tab === 'progress') body = progressHTML();
     else if (nav.tab === 'endless') body = endlessHTML();
     else body = settingsHTML();
-    return `<div class="screen tabs"><div class="scroll" id="tabscroll"><div class="wrap">${body}</div></div>
+    return `<div class="screen tabs"><div class="scroll" id="tabscroll" data-tab="${nav.tab}"><div class="wrap">${body}</div></div>
       <nav class="tabbar"><div class="brand"><span class="logo-s">${I.note}</span><b>Pitch Trainer</b></div>
       ${TABS.map(([k, l, ic]) => `<button class="tab ${nav.tab === k ? 'on' : ''}" data-act="tab" data-k="${k}">${I[ic]}<span>${l}</span></button>`).join('')}
       <div class="side-foot"><span class="pill">${I.flame}${streak()} day streak</span><small>${S.xp || 0} XP · ${totalDone()} / ${totalLessons()} lessons</small></div></nav></div>`;
@@ -1168,15 +1173,15 @@
     const chev = I.chevR;
     return `<h1>Settings</h1><div class="set-grid"><div>
       <div class="sec-t">Sound</div><div class="group">
-        ${row('sel-instrument', I.vol, 'Instrument', 'Recorded instrument samples', sel(INSTR.find((x) => x[0] === st.instrument)[1]))}
-        ${row('sel-names', I.note, 'Note names', '', sel(M.NAME_OPTIONS.find((x) => x[0] === st.names)[1]))}
-        ${row('sel-transpose', I.swap, 'Transposition', 'Practice mode only', sel(M.TRANSPOSE_OPTIONS[st.transpose]))}
+        ${row('sel-instrument', I.vol, 'Instrument', 'Recorded instrument samples', sel((INSTR.find((x) => x[0] === st.instrument) || INSTR[1])[1]))}
+        ${row('sel-names', I.note, 'Note names', '', sel((M.NAME_OPTIONS.find((x) => x[0] === st.names) || M.NAME_OPTIONS[0])[1]))}
+        ${row('sel-transpose', I.swap, 'Transposition', 'Practice mode only', sel(M.TRANSPOSE_OPTIONS[st.transpose] || M.TRANSPOSE_OPTIONS[0]))}
       </div>
       <div class="sec-t">Practice</div><div class="group">
         ${row('tg-keyboard', I.keyboard, 'Keyboard', 'Pitch trainer only', tog(st.keyboard))}
         ${row('tg-hints', I.bulb, 'Answer hints', 'Compare your pick with the answer after a miss', tog(st.hints))}
         ${row('tg-resetEar', I.rotate, 'Reset your ear', 'Short chords before each question', tog(st.resetEar))}
-        ${row('sel-resetStyle', I.chord, 'Reset sound', 'Pleasant chords or a dissonant wipe', sel(RESET_STYLES.find((x) => x[0] === st.resetStyle)[1]), st.resetEar ? '' : 'style="opacity:.5"')}
+        ${row('sel-resetStyle', I.chord, 'Reset sound', 'Pleasant chords or a dissonant wipe', sel((RESET_STYLES.find((x) => x[0] === st.resetStyle) || RESET_STYLES[0])[1]), st.resetEar ? '' : 'style="opacity:.5"')}
         ${row('tg-notifications', I.bell, 'Notifications', 'Daily practice reminder', tog(st.notifications))}
       </div></div><div>
       <div class="sec-t">Appearance</div><div class="group"><div class="srow"><span class="si">${I.sun}</span><div class="st"><b>Theme</b></div>
@@ -1258,7 +1263,7 @@
     const act = b.dataset.act;
     const sk = b.dataset.sk;
     switch (act) {
-      case 'tab': nav.tab = b.dataset.k; render(); { const ts = document.getElementById('tabscroll'); if (ts) ts.scrollTop = 0; } break;
+      case 'tab': if (nav.tab !== b.dataset.k) { nav.tab = b.dataset.k; render(); } else { const ts = document.getElementById('tabscroll'); if (ts) ts.scrollTo({ top: 0, behavior: 'smooth' }); } break;
       case 'skill': skillSheet(sk); break;
       case 'learn': closeOverlay(); nav.pathScroll = null; push('path', { sk }); break;
       case 'practice': closeOverlay(); startPractice(sk); break;
