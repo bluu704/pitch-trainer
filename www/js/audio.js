@@ -3,7 +3,7 @@
    and pitch-shifted in between, through a soft room reverb. Sine wave is synthesized. */
 (function () {
   'use strict';
-  let ctx = null, master = null, analyser = null, bus = null, comp = null, wet = null;
+  let ctx = null, master = null, analyser = null, bus = null, busV = null, verbIn = null, comp = null, wet = null;
   let playId = 0;
   const pending = new Set();
 
@@ -14,8 +14,10 @@
   // how long the note rings after its nominal end
   const REL = { piano: 0.7, guitar: 0.6, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
   // softer onsets (seconds) and a gentle per-instrument low-pass (Hz) to take the edge off
+  // how much of each instrument goes to the room reverb (guitar stays close and dry)
+  const VERB = { piano: 0.24, guitar: 0.06, cello: 0.26, clarinet: 0.24, trumpet: 0.22, sine: 0.24 };
   const ATK = { piano: 0.028, guitar: 0.035, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
-  const TONE = { piano: 2800, guitar: 1700, cello: 2600, clarinet: 2800, trumpet: 2400 };
+  const TONE = { piano: 2800, guitar: 3200, cello: 2600, clarinet: 2800, trumpet: 2400 };
   const buffers = {}; // inst -> {midi: AudioBuffer}
   const loading = {}; // inst -> Promise
 
@@ -34,10 +36,11 @@
     shelf.connect(mid);
     // warm room reverb
     const conv = ctx.createConvolver(); conv.buffer = impulse(2.2, 2.4);
-    wet = ctx.createGain(); wet.gain.value = 0.24;
+    wet = ctx.createGain(); wet.gain.value = 1;
+    verbIn = ctx.createGain(); verbIn.gain.value = 1; verbIn.connect(conv);
     analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
     master.connect(shelf); mid.connect(comp);
-    master.connect(conv); conv.connect(wet); wet.connect(comp);
+    conv.connect(wet); wet.connect(comp); // reverb is fed per instrument (see VERB)
     comp.connect(analyser); analyser.connect(ctx.destination);
     newBus();
     return ctx;
@@ -47,7 +50,10 @@
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
-  function newBus() { bus = ctx.createGain(); bus.gain.value = 1; bus.connect(master); }
+  function newBus() {
+    bus = ctx.createGain(); bus.gain.value = 1; bus.connect(master);
+    busV = ctx.createGain(); busV.gain.value = 1; busV.connect(verbIn);
+  }
 
   function impulse(sec, decay) {
     const rate = ctx.sampleRate, len = Math.floor(rate * sec);
@@ -116,7 +122,13 @@
     g.gain.linearRampToValueAtTime(peak, t + ATK[inst]);
     g.gain.setValueAtTime(peak, t + d);
     g.gain.setTargetAtTime(0, t + d, rel / 3);
-    src.connect(lp); lp.connect(g); g.connect(out);
+    if (inst === 'guitar') {
+      // acoustic body: a little low-mid warmth, keep the string sparkle
+      const body = ctx.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 190; body.Q.value = 1; body.gain.value = 3;
+      src.connect(body); body.connect(lp);
+    } else src.connect(lp);
+    lp.connect(g); g.connect(out);
+    const send = ctx.createGain(); send.gain.value = VERB[inst]; g.connect(send); send.connect(busV);
     src.start(t);
     src.stop(Math.min(t + d + rel * 2 + 0.05, t + src.buffer.duration / src.playbackRate.value + 0.05));
   }
@@ -139,6 +151,7 @@
       o2.start(t); o2.stop(t + d + 0.5);
     }
     lp.connect(g); g.connect(out);
+    const send = ctx.createGain(); send.gain.value = VERB.sine; g.connect(send); send.connect(busV);
     o.start(t); o.stop(t + d + 0.5);
   }
 
@@ -147,11 +160,12 @@
     pending.forEach((t) => { clearTimeout(t.timer); t.resolve(false); });
     pending.clear();
     if (!ctx || !bus) return;
-    const b = bus, now = ctx.currentTime;
+    const b = bus, bv = busV, now = ctx.currentTime;
     b.gain.cancelScheduledValues(now);
     b.gain.setValueAtTime(b.gain.value, now);
     b.gain.linearRampToValueAtTime(0, now + 0.06);
-    setTimeout(() => { try { b.disconnect(); } catch (e) { /* gone */ } }, 300);
+    bv.gain.cancelScheduledValues(now); bv.gain.setValueAtTime(bv.gain.value, now); bv.gain.linearRampToValueAtTime(0, now + 0.06);
+    setTimeout(() => { try { b.disconnect(); bv.disconnect(); } catch (e) { /* gone */ } }, 300);
     newBus();
   }
 

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.2';
+  const VERSION = '1.2.3';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -1119,14 +1119,13 @@
         ${row('logout', I.logout, 'Log out', '', chev)}
         ${row('delete', I.trash, 'Delete account', '', chev)}
       </div></div></div>
-      <div class="foot"><button data-act="doc" data-k="privacy">Privacy</button><button data-act="doc" data-k="terms">Terms</button><button data-act="doc" data-k="ack">Acknowledgements</button><button data-act="doc" data-k="log">Update log</button><button data-act="doc" data-k="keys">Keyboard shortcuts</button><div>Version ${VERSION}</div></div>`;
+      <div class="foot"><button data-act="doc" data-k="privacy">Privacy</button><button data-act="doc" data-k="terms">Terms</button><button data-act="doc" data-k="ack">Acknowledgements</button><button data-act="doc" data-k="keys">Keyboard shortcuts</button><div>Version ${VERSION}</div></div>`;
   }
   const DOCS = {
     keys: ['Keyboard shortcuts', '<ul><li><b>1–9, 0, -, =</b>: pick answer 1 to 12 (the number shows on each button)</li><li><b>C D E F G A B</b>: pick that note in pitch questions</li><li><b>Shift + letter</b>: the flat of that note, e.g. Shift+B = B♭ (the sharp if note names are set to sharps)</li><li><b>Y / N</b>: yes or no</li><li><b>Space</b> or <b>R</b>: hear it again</li><li><b>Backspace</b>: undo in "name them in order" questions</li><li><b>Enter</b>: continue · <b>Esc</b>: back</li></ul>'],
     privacy: ['Privacy', '<h4>Your data stays on your device</h4><p>Pitch Trainer stores your progress and settings only in this device\'s local storage. Nothing is sent to a server.</p><h4>No tracking</h4><p>There are no ads, analytics, or third-party trackers.</p><h4>Deleting data</h4><p>Use Settings → Delete account to erase everything instantly.</p>'],
     terms: ['Terms', '<p>Pitch Trainer is provided as-is for personal ear-training practice. You may use it freely. We make no guarantee that it is free of errors, and we are not liable for any damages arising from its use.</p>'],
-    ack: ['Acknowledgements', '<ul><li>Instrument samples: FluidR3 GM SoundFont by Frank Wen, licensed CC BY 3.0, rendered by the midi-js-soundfonts project (Benjamin Gleitzman).</li><li>Typeface: Nunito (SIL Open Font License).</li><li>Android build: Capacitor.</li><li>Icons drawn in the style of Lucide (ISC License).</li></ul>'],
-    log: ['Update log', `<h4>Version ${VERSION}</h4><ul><li>Piano and guitar are softer: darker tone, a cushioned start to each note, smoother endings, lower level.</li></ul><h4>Version 1.2.1</h4><ul><li>Softer, warmer instrument sound: gentler note starts and endings, less harsh treble, a little more room.</li><li>Keyboard: every answer has a key (1–9, 0, -, =), and pitch questions accept note letters, with Shift for flats (Shift+B = B♭).</li></ul><h4>Version 1.2.0</h4><ul><li>New question types: odd one out, interval and chord chains, chord functions (I → ii, iii, IV, V, vi).</li><li>25 new lessons (236 total) and longer lessons: 18 questions, 22 for reviews, 28 for checkpoints.</li><li>Answers stay visible above the feedback panel on phones.</li><li>Fixes found by testing every lesson end to end.</li></ul><h4>Version 1.1.0</h4><ul><li>Real recorded instruments: piano, guitar, cello, clarinet, trumpet, with a soft room reverb.</li><li>Choose the ear-reset sound: harmonious, mixed, or dissonant.</li><li>62 new lessons (211 total): Deep Bass, Sky High, Melodies, Five Octaves, Quick Ears, Inversion Lab, Going Down, Random Keys and more.</li><li>New question type: name a short melody note by note.</li><li>Endless mode: Random Mix plus one endless mode per skill.</li><li>Desktop layout with keyboard shortcuts for the web version.</li></ul><h4>Version 1.0.0</h4><ul><li>Five skills, 149 lessons, skill paths, practice, streaks, light and dark themes.</li></ul>`]
+    ack: ['Acknowledgements', '<ul><li>Instrument samples (piano, steel-string acoustic guitar, cello, clarinet, trumpet): FluidR3 GM SoundFont by Frank Wen, licensed CC BY 3.0, rendered by the midi-js-soundfonts project (Benjamin Gleitzman).</li><li>Typeface: Nunito (SIL Open Font License).</li><li>Android build: Capacitor.</li><li>Icons drawn in the style of Lucide (ISC License).</li></ul>'],
   };
   function ideasList() {
     if (!S.ideas) S.ideas = [

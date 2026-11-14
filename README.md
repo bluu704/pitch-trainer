@@ -24,7 +24,7 @@ Duolingo-style ear training: learn to hear **notes, intervals, chords, scales, a
 | Settings | Instrument (Random, Piano, Guitar, Cello, Clarinet, Trumpet, Sine), note names (Letter/Solfège ♭/♯), transposition, keyboard, answer hints, reset-your-ear chords with a Harmonious / Mixed / Dissonant sound, notifications, theme (Auto/Light/Dark), feedback board, log out, delete account |
 | Layouts | Phone layout for the Android app; a desktop layout (sidebar, wide grids, keyboard shortcuts 1–9 / Y / N / Space / Enter / Esc) for the web and HTML versions |
 
-Instruments use real recorded samples from the FluidR3 GM SoundFont (Frank Wen, CC BY 3.0, via midi-js-soundfonts), pitch-shifted between sample points and played through a soft room reverb. Progress is stored on the device only.
+Instruments (piano, steel-string acoustic guitar, cello, clarinet, trumpet) use real recorded samples from the FluidR3 GM SoundFont (Frank Wen, CC BY 3.0, via midi-js-soundfonts), pitch-shifted between sample points and played through a soft room reverb. Progress is stored on the device only.
 
 ## Develop
 
