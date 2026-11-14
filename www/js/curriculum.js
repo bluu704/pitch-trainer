@@ -436,7 +436,7 @@
       { t: 'World Scales', d: 'Major blues, Hirajoshi, In-sen.', nu: 1, o: { randomRoot: 1 }, L: [
         { t: 'Major Blues', d: 'Meet the major blues scale.', n: ['majblues'], p: ['pentmaj', 'blues', 'majblues'] },
         { t: 'Japanese Scales', d: 'Meet Hirajoshi and In-sen.', n: ['hirajoshi', 'insen'], p: ['pentmin', 'hirajoshi', 'insen'] },
-        { t: 'Five-Note World', d: 'Every five- and six-note scale.', p: ['pentmaj', 'pentmin', 'blues', 'majblues', 'hirajoshi', 'insen', 'wholetone'] },
+        { t: 'Five-Note World', d: 'Every five- and six-note scale so far.', p: ['pentmaj', 'pentmin', 'blues', 'majblues', 'hirajoshi', 'insen'] },
         { t: 'World Scales', d: 'Checkpoint: world scales.', p: WORLD.concat(['pentmaj', 'pentmin', 'blues']) }
       ] },
       { t: 'Final: Any Scale, Any Key', d: 'All 11 scales, random keys and octaves.', o: { randomRoot: 1, wide: 1 }, L: [
@@ -535,6 +535,22 @@
       ] }
     ]
   };
+
+  /* Unit order, easiest first. Units added later were appended to DATA; this puts each where it belongs.
+     The original 1.0 units keep their relative order, so saved progress still maps (see legacyId). */
+  const ORDER = {
+    pitch: ['Middle C Major', 'Chromatic Middle', 'The Basement', 'The Attic', 'Odd One Out', 'White-Key Mastery', 'Chromatic Mastery', 'Chord Roots', 'Deep Bass', 'Sky High', 'Melodies', 'Two at Once', 'Five Octaves', 'Absolute Pitch'],
+    intervals: ['Perfect Intervals', 'Thirds & Perfects', 'Small Intervals', 'Consonance', 'The Stretches', 'Full Chromatic', 'Odd Interval Out', 'Every Direction', 'Low & Deep', 'New Voices', 'Quick Ears', 'Interval Chains', 'Compound Intervals', 'Final Exam: Absolute Mastery'],
+    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Final Exam: Harmonic Mastery'],
+    scales: ['The Foundation', 'Minor Modes', 'Diatonic Mastery', 'All 11 Scales', 'World Scales', 'Odd Scale Out', 'Going Down', 'Quick Scales', 'Scale Colors', 'Exotic Minors', 'Jazz Scales', 'Symmetric Scales', 'Final: Any Scale, Any Key'],
+    progs: ['Major Foundations', 'Chord Functions', 'Into the Minor', 'Pop & Rock Loops', 'All Nine', 'Borrowed Functions', 'Borrowed Colors', 'The Canon', 'Random Keys', 'Real Voicings', 'Up Tempo', 'Jazz Changes', 'Low Voicings', 'Final: Any Progression, Any Key']
+  };
+  Object.keys(ORDER).forEach((sk) => {
+    const byT = {}; DATA[sk].forEach((u) => { byT[u.t] = u; });
+    const sorted = ORDER[sk].map((t) => byT[t]);
+    if (sorted.some((u) => !u) || sorted.length !== DATA[sk].length) throw new Error('unit order mismatch in ' + sk);
+    DATA[sk] = sorted;
+  });
 
   const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   /* Flatten into lessons with resolved pools/options */
