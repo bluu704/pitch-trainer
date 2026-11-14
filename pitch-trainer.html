@@ -556,6 +556,11 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
 /* long answer names (e.g. 8-chord progressions) wrap inside their button instead of widening the grid */
 .grid > * { min-width: 0; }
 .ch-b { overflow-wrap: anywhere; }
+/* long progressions (8 chords) wrap their chord chips instead of pushing the row wider */
+.lrow .vis { min-width: 0; }
+.lrow .tri { flex-shrink: 0; }
+.lrow .chips { flex-wrap: wrap; row-gap: 9px; height: auto !important; padding: 2px 0 4px; }
+.lrow .vis:has(> .chips) { height: auto; }
 
 </style>
   <script>
