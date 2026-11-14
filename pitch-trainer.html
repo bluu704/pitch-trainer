@@ -552,12 +552,12 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
   const SAMPLE_INST = ['piano', 'guitar', 'cello', 'clarinet', 'trumpet'];
   const POINTS = []; for (let m = 24; m <= 96; m += 3) POINTS.push(m);
   // loudness matching (samples are peak-normalized per instrument)
-  const TRIM = { piano: 0.9, guitar: 0.95, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
+  const TRIM = { piano: 0.8, guitar: 0.66, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
   // how long the note rings after its nominal end
-  const REL = { piano: 0.55, guitar: 0.45, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
+  const REL = { piano: 0.7, guitar: 0.6, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
   // softer onsets (seconds) and a gentle per-instrument low-pass (Hz) to take the edge off
-  const ATK = { piano: 0.014, guitar: 0.012, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
-  const TONE = { piano: 4200, guitar: 3800, cello: 2600, clarinet: 2800, trumpet: 2400 };
+  const ATK = { piano: 0.028, guitar: 0.035, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
+  const TONE = { piano: 2800, guitar: 1700, cello: 2600, clarinet: 2800, trumpet: 2400 };
   const buffers = {}; // inst -> {midi: AudioBuffer}
   const loading = {}; // inst -> Promise
 
@@ -647,7 +647,11 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
     src.playbackRate.value = Math.pow(2, (m - best) / 12);
     const g = ctx.createGain(), lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.Q.value = 0.5;
-    lp.frequency.value = Math.min(TONE[inst], Math.max(1600, mtof(m) * 9));
+    const cut = Math.min(TONE[inst], Math.max(1400, mtof(m) * 8));
+    if (inst === 'piano' || inst === 'guitar') {
+      lp.frequency.setValueAtTime(cut, t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(900, cut * 0.6), t + 0.6);
+    } else lp.frequency.value = cut;
     const peak = vel * TRIM[inst];
     const rel = REL[inst];
     g.gain.setValueAtTime(0, t);
@@ -1542,7 +1546,7 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.1';
+  const VERSION = '1.2.2';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -2666,7 +2670,7 @@ html.desktop .lesson .lfoot .row-btns .btn { max-width: none; }
     privacy: ['Privacy', '<h4>Your data stays on your device</h4><p>Pitch Trainer stores your progress and settings only in this device\'s local storage. Nothing is sent to a server.</p><h4>No tracking</h4><p>There are no ads, analytics, or third-party trackers.</p><h4>Deleting data</h4><p>Use Settings → Delete account to erase everything instantly.</p>'],
     terms: ['Terms', '<p>Pitch Trainer is provided as-is for personal ear-training practice. You may use it freely. We make no guarantee that it is free of errors, and we are not liable for any damages arising from its use.</p>'],
     ack: ['Acknowledgements', '<ul><li>Instrument samples: FluidR3 GM SoundFont by Frank Wen, licensed CC BY 3.0, rendered by the midi-js-soundfonts project (Benjamin Gleitzman).</li><li>Typeface: Nunito (SIL Open Font License).</li><li>Android build: Capacitor.</li><li>Icons drawn in the style of Lucide (ISC License).</li></ul>'],
-    log: ['Update log', `<h4>Version ${VERSION}</h4><ul><li>Softer, warmer instrument sound: gentler note starts and endings, less harsh treble, a little more room.</li><li>Keyboard: every answer has a key (1–9, 0, -, =), and pitch questions accept note letters, with Shift for flats (Shift+B = B♭).</li></ul><h4>Version 1.2.0</h4><ul><li>New question types: odd one out, interval and chord chains, chord functions (I → ii, iii, IV, V, vi).</li><li>25 new lessons (236 total) and longer lessons: 18 questions, 22 for reviews, 28 for checkpoints.</li><li>Answers stay visible above the feedback panel on phones.</li><li>Fixes found by testing every lesson end to end.</li></ul><h4>Version 1.1.0</h4><ul><li>Real recorded instruments: piano, guitar, cello, clarinet, trumpet, with a soft room reverb.</li><li>Choose the ear-reset sound: harmonious, mixed, or dissonant.</li><li>62 new lessons (211 total): Deep Bass, Sky High, Melodies, Five Octaves, Quick Ears, Inversion Lab, Going Down, Random Keys and more.</li><li>New question type: name a short melody note by note.</li><li>Endless mode: Random Mix plus one endless mode per skill.</li><li>Desktop layout with keyboard shortcuts for the web version.</li></ul><h4>Version 1.0.0</h4><ul><li>Five skills, 149 lessons, skill paths, practice, streaks, light and dark themes.</li></ul>`]
+    log: ['Update log', `<h4>Version ${VERSION}</h4><ul><li>Piano and guitar are softer: darker tone, a cushioned start to each note, smoother endings, lower level.</li></ul><h4>Version 1.2.1</h4><ul><li>Softer, warmer instrument sound: gentler note starts and endings, less harsh treble, a little more room.</li><li>Keyboard: every answer has a key (1–9, 0, -, =), and pitch questions accept note letters, with Shift for flats (Shift+B = B♭).</li></ul><h4>Version 1.2.0</h4><ul><li>New question types: odd one out, interval and chord chains, chord functions (I → ii, iii, IV, V, vi).</li><li>25 new lessons (236 total) and longer lessons: 18 questions, 22 for reviews, 28 for checkpoints.</li><li>Answers stay visible above the feedback panel on phones.</li><li>Fixes found by testing every lesson end to end.</li></ul><h4>Version 1.1.0</h4><ul><li>Real recorded instruments: piano, guitar, cello, clarinet, trumpet, with a soft room reverb.</li><li>Choose the ear-reset sound: harmonious, mixed, or dissonant.</li><li>62 new lessons (211 total): Deep Bass, Sky High, Melodies, Five Octaves, Quick Ears, Inversion Lab, Going Down, Random Keys and more.</li><li>New question type: name a short melody note by note.</li><li>Endless mode: Random Mix plus one endless mode per skill.</li><li>Desktop layout with keyboard shortcuts for the web version.</li></ul><h4>Version 1.0.0</h4><ul><li>Five skills, 149 lessons, skill paths, practice, streaks, light and dark themes.</li></ul>`]
   };
   function ideasList() {
     if (!S.ideas) S.ideas = [

@@ -10,12 +10,12 @@
   const SAMPLE_INST = ['piano', 'guitar', 'cello', 'clarinet', 'trumpet'];
   const POINTS = []; for (let m = 24; m <= 96; m += 3) POINTS.push(m);
   // loudness matching (samples are peak-normalized per instrument)
-  const TRIM = { piano: 0.9, guitar: 0.95, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
+  const TRIM = { piano: 0.8, guitar: 0.66, cello: 0.48, clarinet: 0.34, trumpet: 0.52, sine: 0.36 };
   // how long the note rings after its nominal end
-  const REL = { piano: 0.55, guitar: 0.45, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
+  const REL = { piano: 0.7, guitar: 0.6, cello: 0.4, clarinet: 0.32, trumpet: 0.3 };
   // softer onsets (seconds) and a gentle per-instrument low-pass (Hz) to take the edge off
-  const ATK = { piano: 0.014, guitar: 0.012, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
-  const TONE = { piano: 4200, guitar: 3800, cello: 2600, clarinet: 2800, trumpet: 2400 };
+  const ATK = { piano: 0.028, guitar: 0.035, cello: 0.07, clarinet: 0.045, trumpet: 0.05 };
+  const TONE = { piano: 2800, guitar: 1700, cello: 2600, clarinet: 2800, trumpet: 2400 };
   const buffers = {}; // inst -> {midi: AudioBuffer}
   const loading = {}; // inst -> Promise
 
@@ -105,7 +105,11 @@
     src.playbackRate.value = Math.pow(2, (m - best) / 12);
     const g = ctx.createGain(), lp = ctx.createBiquadFilter();
     lp.type = 'lowpass'; lp.Q.value = 0.5;
-    lp.frequency.value = Math.min(TONE[inst], Math.max(1600, mtof(m) * 9));
+    const cut = Math.min(TONE[inst], Math.max(1400, mtof(m) * 8));
+    if (inst === 'piano' || inst === 'guitar') {
+      lp.frequency.setValueAtTime(cut, t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(900, cut * 0.6), t + 0.6);
+    } else lp.frequency.value = cut;
     const peak = vel * TRIM[inst];
     const rel = REL[inst];
     g.gain.setValueAtTime(0, t);
