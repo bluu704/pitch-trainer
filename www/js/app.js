@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.2.3';
+  const VERSION = '1.2.4';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -612,16 +612,35 @@
     }
     return s;
   }
+  /* scale notes written with the right key signature (used on scale slides) */
+  function spellCard(item, pc) {
+    const sp = M.scaleSpelling(item, pc, S.settings.names);
+    const sig = sp.sigCount ? `${sp.sigCount} ${sp.sigType === '♭' ? 'flat' : 'sharp'}${sp.sigCount > 1 ? 's' : ''} (${sp.sigList.join(' ')})` : 'no sharps or flats';
+    return `<div class="card spell"><div class="sp-h">${esc(M.SCALES[item].name)} on ${esc(sp.root)}</div>
+      <div class="sp-notes">${sp.notes.map((n) => `<span class="sp-n ${n.out ? 'out' : ''}">${esc(n.name)}</span>`).join('')}</div>
+      <div class="sp-sig"><b>Key signature:</b> ${esc(sig)}, the same as ${esc(sp.sigMajor)} major.</div>
+      ${sp.notes.some((n) => n.out) ? '<small class="sp-legend">Highlighted notes are outside the key signature.</small>' : ''}</div>`;
+  }
+  function spellLine(item, pc) {
+    const sp = M.scaleSpelling(item, pc, S.settings.names);
+    return `<div class="sp-line">${sp.notes.map((n) => n.out ? `<b>${esc(n.name)}</b>` : esc(n.name)).join(' ')}</div>`;
+  }
   function learnSlides(sk, l) {
     const out = [];
     const o = Object.assign({}, l.o);
+    let scalePc = 0;
+    if (sk === 'scales') { // one key for the whole set of slides, heard and written the same way
+      // keys whose root is written the same way for every scale (no D♭/C♯-style splits)
+      scalePc = l.o.randomRoot ? pick([0, 2, 4, 5, 7, 9, 10, 11]) : 0;
+      o.fixRoot = scalePc <= 6 ? 60 + scalePc : 48 + scalePc;
+    }
     if (l.intro) { const it = INTRO[sk]; out.push({ title: it[0], lead: it[1], html: li(it[2]) }); }
     l.n.forEach((x) => {
       const d = M.DESC[sk][x];
       const name = lbl(sk, x);
       const isHome = sk === 'pitch' && x === 0;
       out.push({ title: `Meet ${name}${isHome ? ', your home' : ''}`, lead: sk === 'pitch' ? '' : M.subLabel(sk, x) || '',
-        html: `<button class="tile ${sk === 'pitch' ? '' : 'lg'}" ${hearBtn(sk, x, o)}>${esc(slbl(sk, x))}</button>${li(d[1])}`, autoplay: { sk, it: x, o } });
+        html: `<button class="tile ${sk === 'pitch' ? '' : 'lg'}" ${hearBtn(sk, x, o)}>${esc(slbl(sk, x))}</button>${sk === 'scales' ? spellCard(x, scalePc) : ''}${li(d[1])}`, autoplay: { sk, it: x, o } });
       out.push({ title: sk === 'pitch' ? `Hear ${name}` : `The sound of ${name}`, lead: '',
         html: `<div class="card hear"><div class="big">${esc(sk === 'progs' ? x : slbl(sk, x))}</div><div class="row"><div>${hl(d[0])}<small>Tap to hear</small></div><button class="playc" ${hearBtn(sk, x, o)}>${I.play}</button></div></div>`
           + (sk === 'pitch' && x !== 0 ? `<div class="card hear mt"><div class="row"><div>Now hear it next to home, C.<small>Tap to compare</small></div><button class="playc" data-act="hearpair" data-b="${x}">${I.play}</button></div></div>` : '') });
@@ -631,8 +650,8 @@
         html: ladderHTML(l.pool, l.n) + `<p class="note-small">${l.intro ? 'This is home. New notes will stack above and below it as you learn them.' : 'Tap any rung to hear it again.'}</p>` });
     } else {
       out.push({ title: `Every ${({ intervals: 'interval', chords: 'chord', scales: 'scale', progs: 'progression' })[sk]} you can hear`,
-        lead: sk === 'scales' ? 'Every scale you have learned, brightest at the top. Tap any to hear it again.' : sk === 'intervals' ? 'Every interval you have learned, smallest to largest. Tap any to hear it again.' : `Every ${sk === 'chords' ? 'chord' : 'progression'} you have learned. Tap any to hear it again.`,
-        html: hearList(sk, l.pool, l.n, o) });
+        lead: sk === 'scales' ? `Every scale you have learned, brightest at the top, all starting on ${M.scaleSpelling('major', scalePc, S.settings.names).root}. Tap any to hear it again.` : sk === 'intervals' ? 'Every interval you have learned, smallest to largest. Tap any to hear it again.' : `Every ${sk === 'chords' ? 'chord' : 'progression'} you have learned. Tap any to hear it again.`,
+        html: hearList(sk, l.pool, l.n, o, scalePc) });
     }
     if (l.intro) {
       out.push({ title: 'Your first questions', lead: sk === 'pitch' ? 'You\'ll hear one note at a time and answer {Yes} or {No}: is it the note we name? A couple of things first:' : 'You\'ll hear a sound and answer. A couple of things first:',
@@ -650,7 +669,7 @@
     return `<div class="ladder"><div class="rail"></div>${items.map((pc) => `<button class="rung ${pc === 0 ? 'home' : ''} ${newItems.includes(pc) ? 'new' : ''}" style="bottom:${y(pc)}px" ${hearBtn('pitch', pc, { oct: [4] })}>${esc(lbl('pitch', pc))}</button>`).join('')}
       <span class="lab" style="bottom:${y(0)}px">Home</span></div>`;
   }
-  function hearList(sk, pool, newItems, o) {
+  function hearList(sk, pool, newItems, o, scalePc) {
     let items = M.ALL_ITEMS[sk].filter((x) => pool.includes(x));
     if (sk === 'intervals') items = items.slice().sort((a, b) => b - a);
     const rows = items.map((x) => {
@@ -670,7 +689,7 @@
         nm = `<b>${x}</b>`;
         vis = `<div class="chips" style="height:26px;align-items:center">${p.chords.map((c, i) => `<span class="rn ${c === c.toLowerCase() ? 'mi' : ''} ${i === p.mark ? 'mk' : ''}">${c}</span>`).join('')}</div>`;
       }
-      return `<button class="lrow ${newItems.includes(x) ? 'new' : ''}" ${hearBtn(sk, x, o)}><div class="nm">${nm}</div><div class="vis">${vis}</div><span class="tri"></span></button>`;
+      return `<button class="lrow ${sk === 'scales' ? 'sc' : ''} ${newItems.includes(x) ? 'new' : ''}" ${hearBtn(sk, x, o)}><div class="nm">${nm}</div><div class="vis">${vis}</div><span class="tri"></span>${sk === 'scales' ? spellLine(x, scalePc || 0) : ''}</button>`;
     });
     return `<div class="list">${rows.join('')}</div>`;
   }

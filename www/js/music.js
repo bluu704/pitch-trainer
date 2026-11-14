@@ -303,6 +303,7 @@
         o.root = rnd(lo, hi); if (o.inv) o.invN = rnd(0, 3); break;
       }
       case 'scales':
+        if (o.fixRoot != null) { o.root = o.fixRoot; o.down = false; break; }
         o.root = scaleRoot(o);
         o.down = !!(o.allDown || (o.desc && Math.random() < 0.5)); break;
       case 'progs': o.key = progKey(o); break;
@@ -346,8 +347,65 @@
   }
   function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
+
+  /* ---------- scale spelling with key signatures ---------- */
+  const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const SOLF = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Ti'];
+  const LPC = [0, 2, 4, 5, 7, 9, 11];
+  const ACC = { '-2': '𝄫', '-1': '♭', 0: '', 1: '♯', 2: '𝄪' };
+  // which letter step each scale degree uses (pentatonics/blues borrow their parent scale's letters)
+  const DEG_LETTERS = { pentmaj: [0, 1, 2, 4, 5, 7], pentmin: [0, 2, 3, 4, 6, 7], blues: [0, 2, 3, 4, 4, 6, 7] };
+  const PARENT = { harmin: 'natmin', melmin: 'natmin', pentmin: 'natmin', blues: 'natmin', pentmaj: 'major' };
+  // position of the relative major's tonic inside each 7-note parent scale
+  const MAJOR_AT = { major: 0, natmin: 2, dorian: 6, phrygian: 5, lydian: 4, mixo: 3 };
+  const FLAT_ORDER = 'BEADGCF', SHARP_ORDER = 'FCGDAEB';
+
+  function spell(item, letter, acc) {
+    const iv = SCALES[item].iv;
+    const degs = DEG_LETTERS[item] || iv.map((_, i) => i);
+    const rootPc = (LPC[letter] + acc + 12) % 12;
+    return iv.map((x, i) => {
+      const li = (letter + degs[i]) % 7;
+      const a = ((rootPc + x - LPC[li]) % 12 + 18) % 12 - 6;
+      return { letter: li, acc: a };
+    });
+  }
+  function keySig(item, letter, acc) {
+    const parent = PARENT[item] || item;
+    const notes = spell(parent, letter, acc).slice(0, 7);
+    const signed = notes.filter((n) => n.acc !== 0);
+    const sharps = signed.filter((n) => n.acc > 0).length;
+    const list = signed.slice().sort((a, b) => (a.acc < 0 ? FLAT_ORDER : SHARP_ORDER).indexOf(LETTERS[a.letter]) - (b.acc < 0 ? FLAT_ORDER : SHARP_ORDER).indexOf(LETTERS[b.letter]));
+    const major = notes[MAJOR_AT[parent]];
+    return { count: signed.length, type: !signed.length ? '' : sharps ? '♯' : '♭', list, major, accOf: (li) => (notes.find((n) => n.letter === li) || { acc: 0 }).acc };
+  }
+  // best way to write a root pitch class for this scale: no double accidentals, fewest sharps/flats
+  function rootSpelling(item, pc) {
+    let best = null;
+    for (let l = 0; l < 7; l++) for (const a of [-1, 0, 1]) {
+      if ((LPC[l] + a + 12) % 12 !== pc) continue;
+      const parent = PARENT[item] || item;
+      const doubles = spell(item, l, a).concat(spell(parent, l, a)).some((n) => Math.abs(n.acc) > 1);
+      const score = (doubles ? 100 : 0) + keySig(item, l, a).count + (a ? 0.5 : 0) + (a > 0 ? 0.01 : 0); // ties go to flats
+      if (!best || score < best.score) best = { letter: l, acc: a, score };
+    }
+    return best;
+  }
+  /* everything a slide needs: spelled notes, which ones are outside the key signature, and the signature */
+  function scaleSpelling(item, pc, names) {
+    const r = rootSpelling(item, ((pc % 12) + 12) % 12);
+    const sig = keySig(item, r.letter, r.acc);
+    const sol = names === 'solFlat' || names === 'solSharp';
+    const nm = (n) => (sol ? SOLF : LETTERS)[n.letter] + ACC[n.acc];
+    return {
+      root: nm(r),
+      notes: spell(item, r.letter, r.acc).map((n) => ({ name: nm(n), out: n.acc !== sig.accOf(n.letter) })),
+      sigCount: sig.count, sigType: sig.type, sigList: sig.list.map(nm), sigMajor: nm(sig.major)
+    };
+  }
+
   window.PTMusic = {
     NAMES, NAME_OPTIONS, TRANSPOSE_OPTIONS, WHITE, BLACK, ALL12, INTERVALS, CHORDS, SCALES, ROMAN, PROGS, DESC,
-    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, FUNC_ITEMS, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
+    SKILLS, SKILL_ORDER, ALL_ITEMS, concrete, seqInstance, FUNC_ITEMS, scaleSpelling, label, shortLabel, subLabel, instance, resetEarSteps, rnd, pick
   };
 })();
