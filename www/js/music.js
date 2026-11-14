@@ -121,7 +121,14 @@
     'ov-inv-9': ["C♯7(♯9)/G♯", 'x-11-11-10-0-0', [56, 61, 65, 59, 64], 'inv'],
     'ov-inv-10': ["D6/9 (bass A)", 'x-12-12-11-0-0', [57, 62, 66, 59, 64], 'inv']
   };
-  const OPENV_FAM = {"a5": "5th-string root", "e6M": "6th-string major (diamond)", "e6m": "6th-string minor", "inv": "5th-string bass"};
+  (function addMaj9Grip() {
+    const R = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+    for (let f = 1; f <= 12; f++) {
+      const notes = [45 + f, 50 + f - 1, 55 + f + 1, 59 + f]; // 5th string root, 4th string one fret lower, 3rd one higher, 2nd same fret
+      OPENV['m9g-' + (notes[0] % 12)] = [R[notes[0] % 12] + 'maj7(9)', '', notes, 'm9g'];
+    }
+  })();
+  const OPENV_FAM = {"a5": "5th-string root", "e6M": "6th-string major", "e6m": "6th-string minor", "inv": "5th-string bass", "m9g": "maj7(9) shape, strings 5-4-3-2"};
   const STRINGS = [40, 45, 50, 55, 59, 64];
   const openNotes = (id) => OPEN[id][1].split('').map((f, i) => (f === 'x' ? null : STRINGS[i] + +f)).filter((n) => n != null);
   const INV = { inv0: ['Root position', 'Root'], inv1: ['1st inversion', '1st'], inv2: ['2nd inversion', '2nd'], inv3: ['3rd inversion', '3rd'] };
@@ -322,7 +329,7 @@
 
   /* item families: some lessons ask about something other than the skill's main items */
   const FUNC_ITEMS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'iv', '♭VII', '♭VI', 'V7'];
-  const FAMILIES = { chords: { open: Object.keys(OPEN), inv: Object.keys(INV), openv: Object.keys(OPENV) }, progs: { func: FUNC_ITEMS } };
+  const FAMILIES = { chords: { open: Object.keys(OPEN), inv: Object.keys(INV), openv: Object.keys(OPENV).filter((k) => OPENV[k][3] !== 'm9g'), m9g: Object.keys(OPENV).filter((k) => OPENV[k][3] === 'm9g') }, progs: { func: FUNC_ITEMS } };
   function famOf(skill, item) {
     const f = FAMILIES[skill]; if (!f) return null;
     if (skill === 'progs' && PROGS[item]) return null;

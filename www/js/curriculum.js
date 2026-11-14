@@ -25,6 +25,7 @@
   const ovUnique = (ids) => { const seen = new Set(); return ids.filter((k) => !seen.has(OV[k][0]) && seen.add(OV[k][0])); };
   const OVA5 = ovFam('a5'), OVE = ovFam('e6M'), OVEM = ovFam('e6m'), OVINV = ovFam('inv');
   const OVALL = ovUnique(OVA5.concat(OVE, OVEM, OVINV));
+  const G9 = (pcs) => pcs.map((pc) => 'm9g-' + pc); // the 5th-string maj7(9) grip, by root pitch class
   const EXOTIC = ['phrygdom', 'hungmin', 'dblharm'], JAZZ = ['lyddom', 'altered', 'bebop', 'locrian'], SYM = ['wholetone', 'dimhw', 'dimwh'], WORLD = ['majblues', 'hirajoshi', 'insen'];
   const POPP = ['I-IV-vi-V', 'I-vi-ii-V', 'IV-V-iii-vi', 'I-♭VII-IV-I'], BORP = ['I-♭VI-♭VII-I', 'i-♭VII-♭VI-V', 'I7-IV7-I7-V7'], JAZP = ['ii7-V7-Imaj7', 'iiø7-V7-i', 'I-vi-ii-V'];
 
@@ -338,9 +339,9 @@
         { t: 'More Chord Colors', d: 'Checkpoint: the new chord colors.', p: COLORS.concat(['add9', 'm9']) }
       ] },
       { t: 'Open-String Shapes', d: 'One left-hand shape slid along the neck, open B and E ringing.', nu: 1, o: { fam: 'openv', inst: 'guitar' }, L: [
-        { t: 'Fifth-String Shape', d: 'x-f-f+2-f+2-0-0: Asus2, Cmaj7, Dsus2(add13), G6 and more.', p: OVA5, slides: 'openv' },
-        { t: 'Diamond Shape', d: 'The four-finger diamond from the 6th string: f-f+2-f+2-f+1-0-0.', p: OVE, slides: 'openv' },
-        { t: 'Minor Diamond', d: 'The minor version: f-f+2-f+2-f-0-0.', p: OVEM, slides: 'openv' },
+        { t: 'Fifth-String Shape', d: 'Asus2, Cmaj7, Dsus2(add13), G6 and more.', p: OVA5, slides: 'openv' },
+        { t: '6th-String Shape', d: 'The four-finger shape from the 6th string, top strings open.', p: OVE, slides: 'openv' },
+        { t: '6th-String Minor Shape', d: 'The minor version of the 6th-string shape.', p: OVEM, slides: 'openv' },
         { t: 'Slash Shape', d: 'Drop the 6th string and the 5th becomes the bass.', p: OVINV, slides: 'openv' },
         { t: 'One Shape, Many Chords', d: 'Every shape, every fret.', p: OVALL },
         { t: 'Shapes, Any Voicing', d: 'The same chords, voiced a new way each time.', p: OVALL, o: { vary: 1 }, slides: 'vary' },
@@ -355,6 +356,14 @@
         { t: 'Any Voicing: Extended', d: 'Ninths, elevenths, thirteenths, any voicing.', p: NINE.concat(ELEV, ['maj7', 'dom7']), o: { vary: 1 } },
         { t: 'Any Voicing: Altered', d: 'Altered dominants, any voicing.', p: ALT.concat(['dom7']), o: { vary: 1 } },
         { t: 'Voicings', d: 'Checkpoint: any chord, any voicing.', p: TRI.concat(SEV, SUS6, NINE), o: { vary: 1, wide: 1 } }
+      ] },
+      { t: 'Maj7(9) Shape', d: 'One maj7(9) grip on strings 5-4-3-2, moved to every root. Name the chord by ear.', nu: 1, o: { fam: 'm9g', inst: 'guitar' }, L: [
+        { t: 'Three Roots', d: 'Cmaj7(9), Fmaj7(9), and Gmaj7(9).', p: G9([0, 5, 7]), slides: 'm9g' },
+        { t: 'Five Roots', d: 'D and A join C, F, and G.', p: G9([0, 2, 5, 7, 9]) },
+        { t: 'White-Key Roots', d: 'C, D, E, F, G, A, and B.', p: G9([0, 2, 4, 5, 7, 9, 11]) },
+        { t: 'All 12 Roots', d: 'The shape on every root.', p: G9([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) },
+        { t: 'Maj7(9), Any Voicing', d: 'The same chords, stacked a new way each time.', p: G9([0, 2, 4, 5, 7, 9, 11]), o: { vary: 1 }, slides: 'vary' },
+        { t: 'Maj7(9) Shape', d: 'Checkpoint: name every maj7(9).', p: G9([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) }
       ] },
       { t: 'Final Exam: Harmonic Mastery', d: 'All chords. All octaves.', o: { wide: 1 }, L: [
         { t: 'Any Octave', d: 'Every chord, anywhere.', p: ALLC },
@@ -541,7 +550,7 @@
   const ORDER = {
     pitch: ['Middle C Major', 'Chromatic Middle', 'The Basement', 'The Attic', 'Odd One Out', 'White-Key Mastery', 'Chromatic Mastery', 'Chord Roots', 'Deep Bass', 'Sky High', 'Melodies', 'Two at Once', 'Five Octaves', 'Absolute Pitch'],
     intervals: ['Perfect Intervals', 'Thirds & Perfects', 'Small Intervals', 'Consonance', 'The Stretches', 'Full Chromatic', 'Odd Interval Out', 'Every Direction', 'Low & Deep', 'New Voices', 'Quick Ears', 'Interval Chains', 'Compound Intervals', 'Final Exam: Absolute Mastery'],
-    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Final Exam: Harmonic Mastery'],
+    chords: ['Basic Triads', 'All Triads', 'Common 7ths', 'Suspended & Sixths', 'All 7ths', 'Odd Chord Out', 'Chord Chains', 'Inversions by Ear', 'Inversion Lab', 'The Rumble', 'High Voicings', 'Color Swap', 'Added Tones', 'Ninths', 'Elevens & Thirteens', 'More Chord Colors', 'Altered Dominants', 'Voicings', 'Open Guitar Chords', 'Open-String Shapes', 'Maj7(9) Shape', 'Final Exam: Harmonic Mastery'],
     scales: ['The Foundation', 'Minor Modes', 'Diatonic Mastery', 'All 11 Scales', 'World Scales', 'Odd Scale Out', 'Going Down', 'Quick Scales', 'Scale Colors', 'Exotic Minors', 'Jazz Scales', 'Symmetric Scales', 'Final: Any Scale, Any Key'],
     progs: ['Major Foundations', 'Chord Functions', 'Into the Minor', 'Pop & Rock Loops', 'All Nine', 'Borrowed Functions', 'Borrowed Colors', 'The Canon', 'Random Keys', 'Real Voicings', 'Up Tempo', 'Jazz Changes', 'Low Voicings', 'Final: Any Progression, Any Key']
   };

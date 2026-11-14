@@ -477,6 +477,7 @@
     if (o.func) q.ask = 'Home first, then which chord?';
     if (o.fam === 'open') q.ask = 'Which open chord is this?';
     if (o.fam === 'openv') q.ask = 'Which chord does this shape make?';
+    if (o.fam === 'm9g') q.ask = 'Which maj7(9) chord is this?';
     if (o.fam === 'inv') q.ask = 'Which inversion is this?';
     if (o.chordRoot) q.ask = 'What is the root of this chord?';
     q.sound = kind === 'seq' ? M.seqInstance(sk, target, oc) : M.instance(sk, target, oc);
@@ -618,10 +619,16 @@
   }
   function typeSlides(kind, sk, l) {
     const pool = (l && l.pool) || [];
+    if (kind === 'm9g') {
+      return [
+        { title: 'The maj7(9) grip', lead: 'A four-finger grip on strings 5, 4, 3, and 2 plays the root, 3rd, 7th, and 9th. The 5th is left out, so the chord sounds soft and dreamy.', html: li(['The {root} is on the 5th string. Move the grip and the root moves with it.', 'Every position is the same color: {maj7(9)}. Only the root changes.', 'Listen to the {lowest note} to name the chord.']), tag: 'Learn · 1 of 2' },
+        { title: 'The chords in this lesson', lead: 'Tap any chord to hear it.', html: shapeList(pool), tag: 'Learn · 2 of 2' }
+      ];
+    }
     if (kind === 'open' || kind === 'openv') {
       const intro = kind === 'open'
         ? ['Open guitar chords', 'These are the first chords every guitarist learns. Each one rings with open strings, so each has its own sound you can learn to recognize.', ['Listen for the {bass note}: it tells you the chord name.', 'Then the {color}: major, minor, 7th, sus, add9.', 'Played on guitar, strummed low to high.']]
-        : ['One shape, many chords', 'Keep the 1st and 2nd strings (E and B) open and slide one left-hand shape along the neck. You only fret the root and 5th; the open strings add the 3rds, 7ths, and tensions.', ['The same shape makes {Cmaj7} at fret 3, {Dsus2(add13)} at fret 5, and {G6} at fret 10.', 'The {diamond} shape from the 6th string adds a 3rd: E, Aadd9, Cmaj7, D6/9 and more.', 'Drop the 6th string and the 5th becomes the bass: slash chords like {G6/D}.']];
+        : ['One shape, many chords', 'Keep the 1st and 2nd strings (E and B) open and slide one left-hand shape along the neck. You only fret the root and 5th; the open strings add the 3rds, 7ths, and tensions.', ['The same shape makes {Cmaj7} at fret 3, {Dsus2(add13)} at fret 5, and {G6} at fret 10.', 'The {6th-string} shape adds a 3rd: E, Aadd9, Cmaj7, D6/9 and more.', 'Drop the 6th string and the 5th becomes the bass: slash chords like {G6/D}.']];
       return [
         { title: intro[0], lead: intro[1], html: li(intro[2]), tag: 'Learn · 1 of 2' },
         { title: 'The chords in this lesson', lead: 'Tap any chord to hear it.', html: shapeList(pool), tag: 'Learn · 2 of 2' }
