@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const M = window.PTMusic, CURM = window.PTCurriculum, CUR = CURM.SKILL, A = window.PTAudio;
-  const VERSION = '1.3.1';
+  const VERSION = '1.3.2';
   const REPO = 'https://github.com/bluu704/pitch-trainer';
   const $app = document.getElementById('app');
   const rnd = M.rnd, pick = M.pick;
@@ -694,11 +694,11 @@
           + (sk === 'pitch' && x !== 0 ? `<div class="card hear mt"><div class="row"><div>Now hear it next to home, C.<small>Tap to compare</small></div><button class="playc" data-act="hearpair" data-b="${x}">${I.play}</button></div></div>` : '') });
     });
     if (sk === 'pitch') {
-      out.push({ title: l.intro ? 'Meet the pitch ladder' : 'Your pitch ladder', lead: 'Higher sounds sit higher here, and every note you learn gets a rung based on how far it is from home, C.',
-        html: ladderHTML(l.pool, l.n) + `<p class="note-small">${l.intro ? 'This is home. New notes will stack above and below it as you learn them.' : 'Tap any rung to hear it again.'}</p>` });
+      out.push({ title: l.intro ? 'Meet the pitch ladder' : 'Your pitch ladder', lead: 'Higher sounds sit higher here, and every note you learn gets a rung based on how far it is from home, ' + lbl('pitch', 0) + '.',
+        html: ladderHTML(l.pool, l.n) + `<p class="note-small">${l.intro ? 'This is home. New notes will stack above it as you learn them.' : 'Tap any rung to hear it again.'}</p>` });
     } else {
       out.push({ title: `Every ${({ intervals: 'interval', chords: 'chord', scales: 'scale', progs: 'progression' })[sk]} you can hear`,
-        lead: sk === 'scales' ? `Every scale you have learned, brightest at the top, all starting on ${M.scaleSpelling('major', scalePc, S.settings.names).root}. Tap any to hear it again.` : sk === 'intervals' ? 'Every interval you have learned, smallest to largest. Tap any to hear it again.' : `Every ${sk === 'chords' ? 'chord' : 'progression'} you have learned. Tap any to hear it again.`,
+        lead: sk === 'scales' ? `Every scale you have learned, brightest at the top, all starting on ${[...new Set((l.pool.length ? l.pool : ['major']).map((it) => M.scaleSpelling(it, scalePc, S.settings.names).root))].join(' / ')}. Tap any to hear it again.` : sk === 'intervals' ? 'Every interval you have learned, smallest to largest. Tap any to hear it again.' : `Every ${sk === 'chords' ? 'chord' : 'progression'} you have learned. Tap any to hear it again.`,
         html: hearList(sk, l.pool, l.n, o, scalePc) });
     }
     if (l.intro) {
@@ -711,11 +711,11 @@
     return out;
   }
   function ladderHTML(pool, newItems) {
+    // rungs alternate left/right of the rail so neighbouring semitones never cover each other
     const items = pool.slice().sort((a, b) => a - b);
-    const H = 230, pad = 18;
-    const y = (pc) => pad + (pc / 12) * (H - 2 * pad - 10);
-    return `<div class="ladder"><div class="rail"></div>${items.map((pc) => `<button class="rung ${pc === 0 ? 'home' : ''} ${newItems.includes(pc) ? 'new' : ''}" style="bottom:${y(pc)}px" ${hearBtn('pitch', pc, { oct: [4] })}>${esc(lbl('pitch', pc))}</button>`).join('')}
-      <span class="lab" style="bottom:${y(0)}px">Home</span></div>`;
+    const step = 22, pad = 20;
+    const y = (pc) => pad + pc * step;
+    return `<div class="ladder" style="height:${2 * pad + 11 * step}px"><div class="rail"></div>${items.map((pc, i) => `<button class="rung ${i % 2 ? 'r' : 'l'} ${pc === 0 ? 'home' : ''} ${newItems.includes(pc) ? 'new' : ''}" style="bottom:${y(pc)}px" ${hearBtn('pitch', pc, { oct: [4] })}>${esc(lbl('pitch', pc))}${pc === 0 ? '<span class="lab">Home</span>' : ''}</button>`).join('')}</div>`;
   }
   function hearList(sk, pool, newItems, o, scalePc) {
     let items = M.ALL_ITEMS[sk].filter((x) => pool.includes(x));

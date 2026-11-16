@@ -630,15 +630,39 @@
   const MAJOR_AT = { major: 0, natmin: 2, dorian: 6, phrygian: 5, lydian: 4, mixo: 3, locrian: 1 };
   const FLAT_ORDER = 'BEADGCF', SHARP_ORDER = 'FCGDAEB';
 
+  const spellWith = (iv, degs, letter, rootPc) => iv.map((x, i) => {
+    const li = (letter + degs[i]) % 7;
+    return { letter: li, acc: ((rootPc + x - LPC[li]) % 12 + 18) % 12 - 6 };
+  });
+  // symmetric/altered scales have no single fixed letter pattern, so if the usual one needs a double sharp/flat,
+  // try every letter pattern and keep the cleanest (no doubles, fewest skipped/repeated letters, no ♯/♭ mix)
+  const FLEX = { wholetone: 1, dimhw: 1, dimwh: 1, altered: 1 };
+  const patterns = (n) => {
+    const out = [];
+    const go = (seq) => {
+      if (seq.length === n - 1) { if (7 - seq[seq.length - 1] <= 2 && 7 - seq[seq.length - 1] >= 0) out.push(seq.concat(7)); return; }
+      for (const d of [0, 1, 2]) { const v = seq[seq.length - 1] + d; if (v < 7) go(seq.concat(v)); }
+    };
+    go([0]);
+    return out;
+  };
+  const PAT = {};
   function spell(item, letter, acc) {
     const iv = SCALES[item].iv;
     const degs = DEG_LETTERS[item] || iv.map((_, i) => i);
     const rootPc = (LPC[letter] + acc + 12) % 12;
-    return iv.map((x, i) => {
-      const li = (letter + degs[i]) % 7;
-      const a = ((rootPc + x - LPC[li]) % 12 + 18) % 12 - 6;
-      return { letter: li, acc: a };
-    });
+    const base = spellWith(iv, degs, letter, rootPc);
+    if (!FLEX[item] || !base.some((n) => Math.abs(n.acc) > 1)) return base;
+    const cost = (ns, dg) => ns.filter((n) => Math.abs(n.acc) > 1).length * 100
+      + dg.slice(1).filter((d, i) => d - dg[i] !== 1).length + (dg[1] === 0 ? 1 : 0)
+      + (ns.some((n) => n.acc > 0) && ns.some((n) => n.acc < 0) ? 0.5 : 0)
+      + ns.reduce((t, n) => t + Math.abs(n.acc), 0) * 0.01;
+    let best = base, bc = cost(base, degs);
+    for (const dg of (PAT[iv.length] = PAT[iv.length] || patterns(iv.length))) {
+      const ns = spellWith(iv, dg, letter, rootPc), c = cost(ns, dg);
+      if (c < bc) { best = ns; bc = c; }
+    }
+    return best;
   }
   function keySig(item, letter, acc) {
     let parent = PARENT[item] || item;
@@ -658,7 +682,8 @@
       let parent = PARENT[item] || item;
       while (PARENT[parent]) parent = PARENT[parent];
       const doubles = spell(item, l, a).concat(spell(parent, l, a)).some((n) => Math.abs(n.acc) > 1);
-      const score = (doubles ? 100 : 0) + keySig(item, l, a).count + (a ? 0.5 : 0) + (a > 0 ? 0.01 : 0); // ties go to flats
+      const odd = (LPC[l] === 4 || LPC[l] === 11) && a > 0 || (LPC[l] === 5 || LPC[l] === 0) && a < 0; // E♯ B♯ F♭ C♭
+      const score = (doubles ? 100 : 0) + (odd ? 3 : 0) + keySig(item, l, a).count + (a ? 0.5 : 0) + (a > 0 ? 0.01 : 0); // ties go to flats
       if (!best || score < best.score) best = { letter: l, acc: a, score };
     }
     return best;
